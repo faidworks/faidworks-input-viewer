@@ -1,31 +1,34 @@
+#include <SFML/Graphics.hpp>
+#include <stdexcept>
 #include "display.h"
-#include <iostream>
 
-Display::Display()
+Display::Display() 
+    : window(sf::VideoMode(800u, 600u), "My SFML Window") // Ensure width and height are unsigned
 {
-    // Create the window
-    window.create(sf::VideoMode(800, 600), "Controller Input Display");
-
-    // Load a font
-    if (!font.loadFromFile("resources/OpenDyslexic-Regular.otf"))
-    {
-        std::cerr << "Failed to load font\n";
+    if (!font.loadFromFile("path/to/font.ttf")) {
+        throw std::runtime_error("Failed to load font");
     }
-
-    // Set up the text
+    
     text.setFont(font);
+    text.setString("Hello, SFML!");
     text.setCharacterSize(24);
     text.setFillColor(sf::Color::White);
-}
-
-bool Display::isOpen() const
-{
-    return window.isOpen();
 }
 
 Display::~Display()
 {
     window.close();
+}
+
+void Display::draw() {
+    window.clear();
+    window.draw(text);
+    window.display();
+}
+
+bool Display::isOpen() const
+{
+    return window.isOpen();
 }
 
 void Display::render(const Controller::GamepadState &state)

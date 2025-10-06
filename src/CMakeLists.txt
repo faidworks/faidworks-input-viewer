@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Specify the include directories
-include_directories(include)
+include_directories(../include)
 
 # Find SDL2 library
 find_package(SDL2 REQUIRED)

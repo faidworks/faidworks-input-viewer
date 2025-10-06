@@ -9,9 +9,6 @@ int main()
     Display display;
     Controller controller;
 
-    // Initialize the controller
-    controller.setUp();
-
     // Load settings
     settings.load();
 
@@ -32,9 +29,7 @@ int main()
             break;
         }
     }
-
-    // Clean up
-    controller.tearDown();
+    
     settings.save();
     return 0;
 }

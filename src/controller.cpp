@@ -47,7 +47,7 @@ void Controller::update()
     }
     if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_A) == SDL_PRESSED)
     {
-        state.Gamepad.wButtons |= 0x1000; // Simulate button press for testing
+        // Example: Handle button press
     }
 #endif
 }

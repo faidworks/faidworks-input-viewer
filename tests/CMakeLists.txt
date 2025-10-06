@@ -9,8 +9,16 @@ include_directories(../include)
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 
-# Create the test executable and link against the source files of the main app
-add_executable(test_controller test_controller.cpp ../src/controller.cpp ../src/settings.cpp ../src/display.cpp)
+# Create the test executable
+add_executable(test_app test_main.cpp test_controller.cpp ../src/controller.cpp ../src/settings.cpp ../src/display.cpp)
 
 # Link the test executable with necessary libraries
-target_link_libraries(test_controller ${GTEST_LIBRARIES} pthread)
+target_link_libraries(test_app ${GTEST_LIBRARIES})
+
+# Conditionally link pthread for Unix-like systems
+if(UNIX)
+    target_link_libraries(test_app pthread)
+endif()
+
+# Optionally, add a test entry for CTest
+add_test(NAME MyControllerTests COMMAND test_app)

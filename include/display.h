@@ -9,6 +9,7 @@ class Display
 public:
     Display();
     ~Display();
+    void draw();
     void render(const Controller::GamepadState &state);
     bool isOpen() const; // New method to check if the window is open
 

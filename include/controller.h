@@ -9,8 +9,6 @@ public:
     Controller();
     ~Controller();
     void update();
-    void setUp();    // Initialize controller
-    void tearDown(); // Clean up
     // Structure to hold common Gamepad state
     struct GamepadState
     {

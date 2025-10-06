@@ -5,16 +5,6 @@ class ControllerTest : public ::testing::Test
 {
 protected:
     Controller controller;
-
-    void SetUp() override
-    {
-        controller.setUp();
-    }
-
-    void TearDown() override
-    {
-        controller.tearDown();
-    }
 };
 
 TEST_F(ControllerTest, UpdateState)

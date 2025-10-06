@@ -3,9 +3,10 @@
 #include "display.h"
 
 Display::Display() 
-    : window(sf::VideoMode(800u, 600u), "My SFML Window") // Ensure width and height are unsigned
+    : window(sf::VideoMode({800u, 600u}), "My SFML Window")
 {
-    if (!font.loadFromFile("path/to/font.ttf")) {
+    if (!font.loadFromFile("../resources/openDyslexic.otf"))
+    {
         throw std::runtime_error("Failed to load font");
     }
     

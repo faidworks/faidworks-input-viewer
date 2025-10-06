@@ -12,15 +12,15 @@ include_directories(../include)
 # Find SDL2 library
 find_package(SDL2 REQUIRED)
 
-# Find SFML
-find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
+# Find SFML 3
+find_package(SFML 3 REQUIRED COMPONENTS Graphics Audio Network)
 
 # Create the main executable
 add_executable(MyControllerApp main.cpp controller.cpp settings.cpp display.cpp)
 
 # Link against the appropriate libraries based on platform
 if (WIN32)
-    target_link_libraries(MyControllerApp Xinput sfml-graphics sfml-window sfml-system)
+    target_link_libraries(MyControllerApp Xinput SFML::Graphics SFML::Audio SFML::Network)
 else()
-    target_link_libraries(MyControllerApp SDL2::SDL2 sfml-graphics sfml-window sfml-system)
+    target_link_libraries(MyControllerApp SDL2::SDL2 SFML::Graphics SFML::Audio SFML::Network)
 endif()

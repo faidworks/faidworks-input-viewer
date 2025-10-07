@@ -3,18 +3,9 @@
 #include "display.h"
 
 Display::Display() 
-    : window(sf::VideoMode({800u, 600u}), "My SFML Window")
-{
-    if (!font.loadFromFile("../resources/openDyslexic.otf"))
-    {
-        throw std::runtime_error("Failed to load font");
-    }
-    
-    text.setFont(font);
-    text.setString("Hello, SFML!");
-    text.setCharacterSize(24);
-    text.setFillColor(sf::Color::White);
-}
+    : window(sf::VideoMode({800u, 600u}), "My SFML Window"),
+        font("../resources/openDyslexic.otf"),
+        text(font, "Initializing...", 24) {}
 
 Display::~Display()
 {

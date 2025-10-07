@@ -2,17 +2,18 @@
 #include <stdexcept>
 #include "display.h"
 
-Display::Display() 
+Display::Display()
     : window(sf::VideoMode({800u, 600u}), "My SFML Window"),
-        font("../resources/openDyslexic.otf"),
-        text(font, "Initializing...", 24) {}
+      font(),
+      text("Initializing...", font, 24) {}
 
 Display::~Display()
 {
     window.close();
 }
 
-void Display::draw() {
+void Display::draw()
+{
     window.clear();
     window.draw(text);
     window.display();
@@ -42,12 +43,21 @@ void Display::render(const Controller::GamepadState &state)
     window.display();
 
     // Handle events
-    sf::Event event;
-    while (window.pollEvent(event))
+    while (window.isOpen())
     {
-        if (event.type == sf::Event::Closed)
+        while (const std::optional event = window.pollEvent())
         {
-            window.close();
+            if (event->is<sf::Event::Closed>())
+            {
+                window.close();
+            }
+            else if (const auto *keyPressed = event->getIf<sf::Event::KeyPressed>())
+            {
+                if (keyPressed->scancode == sf::Keyboard::Scancode::Escape)
+                    window.close();
+            }
         }
+
+        // Rest of the main loop
     }
 }

@@ -3,6 +3,17 @@
 
 class ControllerTest : public ::testing::Test
 {
+public:
+    void SetUp() override
+    {
+        controller = Controller();
+    }
+
+    void TearDown() override
+    {
+        controller.~Controller();
+    }
+
 protected:
     Controller controller;
 };

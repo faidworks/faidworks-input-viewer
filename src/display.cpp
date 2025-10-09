@@ -5,7 +5,7 @@
 Display::Display()
     : window(sf::VideoMode({800u, 600u}), "My SFML Window"),
       font(),
-      text("Initializing...", font, 24) {}
+      text(font, "Initializing...", 24u) {}
 
 Display::~Display()
 {

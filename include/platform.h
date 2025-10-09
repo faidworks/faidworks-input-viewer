@@ -5,8 +5,8 @@
 #include <Windows.h>
 #include <Xinput.h>
 #else
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_gamecontroller.h>
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_gamepad.h>
 #endif
 
 #endif // PLATFORM_H

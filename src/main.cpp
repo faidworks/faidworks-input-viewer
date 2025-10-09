@@ -29,7 +29,7 @@ int main()
             break;
         }
     }
-    
+
     settings.save();
     return 0;
 }

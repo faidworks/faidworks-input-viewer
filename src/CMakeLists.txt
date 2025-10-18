@@ -1,5 +1,5 @@
 # CMake minimum version and project name
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 4.1)
 project(MyControllerApp)
 
 # C++ standards
@@ -50,12 +50,12 @@ add_library(MyControllerLib STATIC ${SOURCES})
 
 # Optionally create an executable
 add_executable(MyControllerApp ${SOURCES})
-target_link_libraries(MyControllerApp MyControllerLib ...)
+target_link_libraries(MyControllerApp PRIVATE MyControllerLib ...)
 
 
 # Link against the appropriate libraries based on platform
 if (WIN32)
-    target_link_libraries(MyControllerApp Xinput SFML::Graphics SFML::Audio SFML::Network)
+    target_link_libraries(MyControllerApp PRIVATE Xinput SFML::Graphics SFML::Audio SFML::Network)
 else()
-    target_link_libraries(MyControllerApp SDL3::SDL3 SFML::Graphics SFML::Audio SFML::Network)
+    target_link_libraries(MyControllerApp PRIVATE SDL3::SDL3 SDL3::Headers SFML::Graphics SFML::Audio SFML::Network)
 endif()

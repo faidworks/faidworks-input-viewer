@@ -50,7 +50,7 @@ add_library(MyControllerLib STATIC ${SOURCES})
 
 # Optionally create an executable
 add_executable(MyControllerApp ${SOURCES})
-target_link_libraries(MyControllerApp PRIVATE MyControllerLib ...)
+target_link_libraries(MyControllerApp PRIVATE MyControllerLib)
 
 
 # Link against the appropriate libraries based on platform

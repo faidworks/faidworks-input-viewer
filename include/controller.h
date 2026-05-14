@@ -24,7 +24,7 @@ private:
 #ifdef _WIN32
     XINPUT_STATE state;
 #else
-    SDL_GameController *controller;
+    SDL_Gamepad *gamepad;
     SDL_Joystick *joystick;
 #endif
 };

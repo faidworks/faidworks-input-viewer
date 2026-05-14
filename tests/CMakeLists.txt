@@ -5,6 +5,12 @@ project(MyControllerAppTests)
 # Include directories
 include_directories(../include)
 
+# Find SDL3
+find_package(SDL3 REQUIRED)
+
+# Find SFML
+find_package(SFML REQUIRED COMPONENTS Graphics Audio Network)
+
 # Include Google Test
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
@@ -19,7 +25,7 @@ file(GLOB TEST_SOURCES
 add_executable(test_app ${TEST_SOURCES})
 
 # Link the test executable with necessary libraries
-target_link_libraries(test_app ${GTEST_LIBRARIES} MyControllerLib)
+target_link_libraries(test_app ${GTEST_LIBRARIES} MyControllerLib SDL3::SDL3 SFML::Graphics SFML::Audio SFML::Network)
 
 # Conditionally link pthread for Unix-like systems
 if(UNIX)

@@ -6,18 +6,30 @@ Controller::Controller()
 #ifdef _WIN32
     ZeroMemory(&state, sizeof(XINPUT_STATE));
 #else
-    if (SDL_Init(SDL_INIT_GAMECONTROLLER) < 0)
+    if (!SDL_Init(SDL_INIT_GAMEPAD))
     {
         std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << std::endl;
     }
     else
     {
-        controller = SDL_GameControllerOpen(0);
-        joystick = SDL_JoystickOpen(0);
-        if (controller == nullptr)
+        int count = 0;
+        SDL_JoystickID *gamepads = SDL_GetGamepads(&count);
+        if (gamepads && count > 0)
         {
-            std::cerr << "Failed to open game controller! SDL Error: " << SDL_GetError() << std::endl;
+            gamepad = SDL_OpenGamepad(gamepads[0]);
+            joystick = SDL_OpenJoystick(gamepads[0]);
+            if (gamepad == nullptr)
+            {
+                std::cerr << "Failed to open game controller! SDL Error: " << SDL_GetError() << std::endl;
+            }
         }
+        else
+        {
+            gamepad = nullptr;
+            joystick = nullptr;
+            std::cerr << "No gamepads found!" << std::endl;
+        }
+        SDL_free(gamepads);
     }
 #endif
 }
@@ -27,9 +39,9 @@ Controller::~Controller()
 #ifdef _WIN32
     // No specific clean-up required for XInput
 #else
-    if (controller)
+    if (gamepad)
     {
-        SDL_GameControllerClose(controller);
+        SDL_CloseGamepad(gamepad);
     }
     SDL_Quit();
 #endif
@@ -45,7 +57,7 @@ void Controller::update()
     {
         /* Handle SDL events if necessary */
     }
-    if (SDL_GameControllerGetButton(controller, SDL_CONTROLLER_BUTTON_A) == SDL_PRESSED)
+    if (gamepad && SDL_GetGamepadButton(gamepad, SDL_GAMEPAD_BUTTON_SOUTH))
     {
         // Example: Handle button press
     }
@@ -63,11 +75,10 @@ Controller::GamepadState Controller::getState() const
     gamepadState.rightThumbY = state.Gamepad.sThumbRY;
 #else
     gamepadState.buttons = 0;
-    // Translating SDL buttons to a custom state definition
-    gamepadState.leftThumbX = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX);
-    gamepadState.leftThumbY = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY);
-    gamepadState.rightThumbX = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTX);
-    gamepadState.rightThumbY = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_RIGHTY);
+    gamepadState.leftThumbX = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTX);
+    gamepadState.leftThumbY = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY);
+    gamepadState.rightThumbX = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTX);
+    gamepadState.rightThumbY = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTY);
 #endif
     return gamepadState;
 }

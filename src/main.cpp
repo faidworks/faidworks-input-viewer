@@ -1,4 +1,3 @@
-#include <iostream>
 #include "controller.h"
 #include "settings.h"
 #include "display.h"
@@ -9,24 +8,23 @@ int main()
     Display display;
     Controller controller;
 
-    // Load settings
     settings.load();
 
-    // Main loop
-    while (true)
+    while (display.isOpen())
     {
         controller.update();
+        display.processEvents(settings, controller);
 
-        // Get the current gamepad state
-        auto state = controller.getState();
-
-        // Render the current state
-        display.render(state);
-
-        // Handle user input for quitting
         if (!display.isOpen())
-        { // If the window is closed, break the loop
             break;
+
+        if (display.getViewMode() == ViewMode::Main)
+        {
+            display.render(settings, controller);
+        }
+        else
+        {
+            display.renderSettings(settings);
         }
     }
 

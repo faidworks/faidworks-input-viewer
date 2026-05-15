@@ -6,6 +6,7 @@
 #include <vector>
 
 enum class InputType { None, Key, GamepadButton, GamepadAxis };
+enum class ActiveStyle { Filled, Pressed };
 
 struct InputMapping {
     InputType type = InputType::None;
@@ -28,6 +29,7 @@ public:
     void save();
 
     std::map<std::string, InputMapping> mappings;
+    ActiveStyle activeStyle = ActiveStyle::Filled;
 };
 
 #endif // SETTINGS_H

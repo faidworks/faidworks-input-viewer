@@ -18,6 +18,12 @@ void Settings::load()
         std::string button = line.substr(0, eq);
         std::string value = line.substr(eq + 1);
 
+        if (button == "_activeStyle")
+        {
+            activeStyle = (value == "pressed") ? ActiveStyle::Pressed : ActiveStyle::Filled;
+            continue;
+        }
+
         auto colon1 = value.find(':');
         auto colon2 = value.find(':', colon1 + 1);
         if (colon1 == std::string::npos || colon2 == std::string::npos)
@@ -56,6 +62,8 @@ void Settings::save()
     std::ofstream file("settings.txt");
     if (!file.is_open())
         return;
+
+    file << "_activeStyle=" << (activeStyle == ActiveStyle::Pressed ? "pressed" : "filled") << "\n";
 
     for (const auto &[button, mapping] : mappings)
     {

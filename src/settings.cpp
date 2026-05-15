@@ -1,10 +1,40 @@
 #include "settings.h"
+#include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
+
+namespace fs = std::filesystem;
+
+static fs::path configDir()
+{
+#ifdef _WIN32
+    const char *appdata = std::getenv("APPDATA");
+    fs::path dir = appdata ? fs::path(std::string(appdata)) / "input-viewer" : fs::current_path();
+#else
+    const char *xdg = std::getenv("XDG_CONFIG_HOME");
+    fs::path dir;
+    if (xdg)
+        dir = fs::path(std::string(xdg)) / "input-viewer";
+    else
+    {
+        const char *home = std::getenv("HOME");
+        dir = home ? fs::path(std::string(home)) / ".config" / "input-viewer" : fs::current_path();
+    }
+#endif
+    fs::create_directories(dir);
+    return dir;
+}
+
+static fs::path configPath(const std::string &filename)
+{
+    return configDir() / filename;
+}
 
 void Settings::load()
 {
-    std::ifstream file("settings.txt");
+    std::ifstream file(configPath("settings.txt"));
     if (!file.is_open())
         return;
 
@@ -44,7 +74,11 @@ void Settings::load()
         {
             mapping.code = std::stoi(codeStr);
         }
-        catch (...)
+        catch (const std::invalid_argument &)
+        {
+            continue;
+        }
+        catch (const std::out_of_range &)
         {
             continue;
         }
@@ -65,7 +99,7 @@ void Settings::load()
 
 void Settings::save()
 {
-    std::ofstream file("settings.txt");
+    std::ofstream file(configPath("settings.txt"));
     if (!file.is_open())
         return;
 
@@ -117,7 +151,7 @@ void Settings::loadLayout()
 {
     layout = DEFAULT_LAYOUT;
 
-    std::ifstream file("layout.txt");
+    std::ifstream file(configPath("layout.txt"));
     if (!file.is_open())
         return;
 
@@ -141,7 +175,11 @@ void Settings::loadLayout()
             float y = std::stof(value.substr(comma + 1));
             layout[name] = {x, y};
         }
-        catch (...)
+        catch (const std::invalid_argument &)
+        {
+            continue;
+        }
+        catch (const std::out_of_range &)
         {
             continue;
         }
@@ -150,7 +188,7 @@ void Settings::loadLayout()
 
 void Settings::saveLayout()
 {
-    std::ofstream file("layout.txt");
+    std::ofstream file(configPath("layout.txt"));
     if (!file.is_open())
         return;
 

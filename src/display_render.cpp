@@ -98,7 +98,7 @@ void Display::render(const Settings &settings, const Controller &controller)
         float fill = 0.f;
         auto mapIt = settings.mappings.find(btn);
         if (mapIt != settings.mappings.end() && mapIt->second.type == InputType::GamepadAxis)
-            fill = controller.getAxisValue(mapIt->second.code) / 32767.f;
+            fill = controller.getAxisValue(mapIt->second.code) / 32768.f;
 
         if (fill > 0.f)
             drawSpritePartialFill(prefix + "-pressed", cx, cy - 8.f, BTN_SCALE, fill, fromLeft);

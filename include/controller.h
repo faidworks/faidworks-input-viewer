@@ -26,10 +26,13 @@ public:
 
     int getNewlyPressedButton() const;
     int getNewlyActiveAxis(int threshold = 16000) const;
+    bool isConnected() const;
+
     static const char *buttonName(int index);
     static const char *axisName(int index);
 
 private:
+    void tryConnect();
 #ifdef _WIN32
     XINPUT_STATE state;
     XINPUT_STATE prevState;

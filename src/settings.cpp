@@ -24,6 +24,12 @@ void Settings::load()
             continue;
         }
 
+        if (button == "_bgColor")
+        {
+            bgColor = value;
+            continue;
+        }
+
         auto colon1 = value.find(':');
         auto colon2 = value.find(':', colon1 + 1);
         if (colon1 == std::string::npos || colon2 == std::string::npos)
@@ -64,6 +70,7 @@ void Settings::save()
         return;
 
     file << "_activeStyle=" << (activeStyle == ActiveStyle::Pressed ? "pressed" : "filled") << "\n";
+    file << "_bgColor=" << bgColor << "\n";
 
     for (const auto &[button, mapping] : mappings)
     {

@@ -1,4 +1,5 @@
-_activeStyle=pressed
+_activeStyle=filled
+_bgColor=AAAAAA
 A=button:0:A
 B=button:1:B
 DPad Down=button:12:DPad Down

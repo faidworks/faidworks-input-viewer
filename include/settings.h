@@ -42,6 +42,7 @@ public:
 
     std::map<std::string, InputMapping> mappings;
     ActiveStyle activeStyle = ActiveStyle::Filled;
+    std::string bgColor = "000000";
     std::map<std::string, ElementLayout> layout;
 };
 

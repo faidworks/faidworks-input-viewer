@@ -43,6 +43,10 @@ file(GLOB SOURCES
     "controller.cpp"
     "settings.cpp"
     "display.cpp"
+    "display_events.cpp"
+    "display_render.cpp"
+    "display_layout.cpp"
+    "display_settings.cpp"
 )
 
 # Create a library from the source files

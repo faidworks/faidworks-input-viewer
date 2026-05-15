@@ -9,31 +9,43 @@ Controller::Controller()
     ZeroMemory(&state, sizeof(XINPUT_STATE));
     ZeroMemory(&prevState, sizeof(XINPUT_STATE));
 #else
+    gamepad = nullptr;
+    joystick = nullptr;
     if (!SDL_Init(SDL_INIT_GAMEPAD))
     {
         std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << std::endl;
     }
     else
     {
-        int count = 0;
-        SDL_JoystickID *gamepads = SDL_GetGamepads(&count);
-        if (gamepads && count > 0)
-        {
-            gamepad = SDL_OpenGamepad(gamepads[0]);
-            joystick = SDL_OpenJoystick(gamepads[0]);
-            if (gamepad == nullptr)
-            {
-                std::cerr << "Failed to open game controller! SDL Error: " << SDL_GetError() << std::endl;
-            }
-        }
-        else
-        {
-            gamepad = nullptr;
-            joystick = nullptr;
-            std::cerr << "No gamepads found!" << std::endl;
-        }
-        SDL_free(gamepads);
+        tryConnect();
     }
+#endif
+}
+
+void Controller::tryConnect()
+{
+#ifdef _WIN32
+#else
+    int count = 0;
+    SDL_JoystickID *gamepads = SDL_GetGamepads(&count);
+    if (gamepads && count > 0)
+    {
+        gamepad = SDL_OpenGamepad(gamepads[0]);
+        joystick = SDL_OpenJoystick(gamepads[0]);
+        if (gamepad == nullptr)
+            std::cerr << "Failed to open game controller! SDL Error: " << SDL_GetError() << std::endl;
+    }
+    SDL_free(gamepads);
+#endif
+}
+
+bool Controller::isConnected() const
+{
+#ifdef _WIN32
+    XINPUT_STATE tmp;
+    return XInputGetState(0, &tmp) == ERROR_SUCCESS;
+#else
+    return gamepad != nullptr;
 #endif
 }
 
@@ -63,6 +75,9 @@ void Controller::update()
     while (SDL_PollEvent(&event))
     {
     }
+
+    if (!gamepad)
+        tryConnect();
 
     if (gamepad)
     {

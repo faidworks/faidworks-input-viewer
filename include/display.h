@@ -33,11 +33,17 @@ private:
     std::map<std::string, sf::Texture> textures;
     void loadTextures();
     void drawSpriteCentered(const std::string &key, float cx, float cy, float scale);
+    void drawSpritePartialFill(const std::string &key, float cx, float cy, float scale, float fill, bool fromLeft);
     void drawNavBar();
     float navBarHeight() const;
 
     std::string draggingElement;
     sf::Vector2f dragOffset;
+
+    bool editingBgColor = false;
+    std::string bgColorInput;
 };
+
+sf::Color parseHexColor(const std::string &hex);
 
 #endif // DISPLAY_H

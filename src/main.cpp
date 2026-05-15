@@ -9,6 +9,7 @@ int main()
     Controller controller;
 
     settings.load();
+    settings.loadLayout();
 
     while (display.isOpen())
     {
@@ -18,16 +19,21 @@ int main()
         if (!display.isOpen())
             break;
 
-        if (display.getViewMode() == ViewMode::Main)
+        switch (display.getViewMode())
         {
+        case ViewMode::Main:
             display.render(settings, controller);
-        }
-        else
-        {
+            break;
+        case ViewMode::Layout:
+            display.renderLayout(settings);
+            break;
+        case ViewMode::Settings:
             display.renderSettings(settings);
+            break;
         }
     }
 
     settings.save();
+    settings.saveLayout();
     return 0;
 }

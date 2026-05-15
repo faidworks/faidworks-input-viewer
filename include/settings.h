@@ -22,14 +22,27 @@ inline const std::vector<std::string> GAMEPAD_BUTTONS = {
     "LStick X", "LStick Y", "RStick X", "RStick Y"
 };
 
+struct ElementLayout {
+    float x, y;
+};
+
+inline const std::vector<std::string> LAYOUT_ELEMENTS = {
+    "A", "B", "X", "Y", "Start",
+    "LB", "RB", "LT", "RT", "Select",
+    "DPad", "LStick", "RStick"
+};
+
 class Settings
 {
 public:
     void load();
     void save();
+    void loadLayout();
+    void saveLayout();
 
     std::map<std::string, InputMapping> mappings;
     ActiveStyle activeStyle = ActiveStyle::Filled;
+    std::map<std::string, ElementLayout> layout;
 };
 
 #endif // SETTINGS_H

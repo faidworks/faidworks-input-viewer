@@ -1,4 +1,4 @@
-_activeStyle=filled
+_activeStyle=pressed
 A=button:0:A
 B=button:1:B
 DPad Down=button:12:DPad Down

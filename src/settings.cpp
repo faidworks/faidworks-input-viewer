@@ -89,3 +89,64 @@ void Settings::save()
         file << button << "=" << typeStr << ":" << mapping.code << ":" << mapping.name << "\n";
     }
 }
+
+static const std::map<std::string, ElementLayout> DEFAULT_LAYOUT = {
+    {"A", {180.f, 72.f}},
+    {"B", {290.f, 72.f}},
+    {"X", {400.f, 72.f}},
+    {"Y", {510.f, 72.f}},
+    {"Start", {620.f, 72.f}},
+    {"LB", {180.f, 172.f}},
+    {"RB", {290.f, 172.f}},
+    {"LT", {400.f, 172.f}},
+    {"RT", {510.f, 172.f}},
+    {"Select", {620.f, 172.f}},
+    {"DPad", {150.f, 340.f}},
+    {"LStick", {400.f, 340.f}},
+    {"RStick", {650.f, 340.f}},
+};
+
+void Settings::loadLayout()
+{
+    layout = DEFAULT_LAYOUT;
+
+    std::ifstream file("layout.txt");
+    if (!file.is_open())
+        return;
+
+    std::string line;
+    while (std::getline(file, line))
+    {
+        auto eq = line.find('=');
+        if (eq == std::string::npos)
+            continue;
+
+        std::string name = line.substr(0, eq);
+        std::string value = line.substr(eq + 1);
+
+        auto comma = value.find(',');
+        if (comma == std::string::npos)
+            continue;
+
+        try
+        {
+            float x = std::stof(value.substr(0, comma));
+            float y = std::stof(value.substr(comma + 1));
+            layout[name] = {x, y};
+        }
+        catch (...)
+        {
+            continue;
+        }
+    }
+}
+
+void Settings::saveLayout()
+{
+    std::ofstream file("layout.txt");
+    if (!file.is_open())
+        return;
+
+    for (const auto &[name, pos] : layout)
+        file << name << "=" << pos.x << "," << pos.y << "\n";
+}

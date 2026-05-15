@@ -25,7 +25,7 @@ private:
     sf::RenderWindow window;
     sf::Font font;
     sf::Text text;
-    ViewMode viewMode = ViewMode::Settings;
+    ViewMode viewMode = ViewMode::Main;
     bool navBarVisible = false;
     int detectingIndex = -1;
     float settingsScroll = 0.f;

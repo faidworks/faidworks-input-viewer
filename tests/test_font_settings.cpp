@@ -16,7 +16,7 @@ protected:
     void SetUp() override
     {
         tempDir = fs::temp_directory_path() / "input-viewer-test";
-        fs::create_directories(tempDir / "input-viewer");
+        fs::create_directories(tempDir / "faidworks-input-viewer");
 
         const char *xdg = std::getenv("XDG_CONFIG_HOME");
         if (xdg)
@@ -38,8 +38,8 @@ protected:
 
     void writeSettingsFile(const std::string &content)
     {
-        fs::create_directories(tempDir / "input-viewer");
-        std::ofstream f(tempDir / "input-viewer" / "settings.txt");
+        fs::create_directories(tempDir / "faidworks-input-viewer");
+        std::ofstream f(tempDir / "faidworks-input-viewer" / "settings.txt");
         f << content;
     }
 };

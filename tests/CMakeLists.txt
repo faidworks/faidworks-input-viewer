@@ -21,6 +21,7 @@ file(GLOB TEST_SOURCES
     "test_controller.cpp"
     "test_settings.cpp"
     "test_display_utils.cpp"
+    "test_font_settings.cpp"
 )
 
 # Create the test executable

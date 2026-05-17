@@ -10,6 +10,7 @@ int main()
 
     settings.load();
     settings.loadLayout();
+    display.loadFont(settings.fontPath);
 
     while (display.isOpen())
     {

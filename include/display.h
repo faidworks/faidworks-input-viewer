@@ -4,6 +4,8 @@
 #include <SFML/Graphics.hpp>
 #include <map>
 #include <string>
+#include <vector>
+#include <utility>
 #include "controller.h"
 #include "settings.h"
 
@@ -20,6 +22,7 @@ public:
     void renderSettings(const Settings &settings);
     bool isOpen() const;
     ViewMode getViewMode() const;
+    void loadFont(const std::string &path);
 
 private:
     sf::RenderWindow window;
@@ -34,11 +37,18 @@ private:
     sf::Shader tintShader;
     bool shaderLoaded = false;
     void loadTextures();
+    void scanSystemFonts();
     void drawSpriteCentered(const std::string &key, float cx, float cy, float scale);
     void drawSpriteTinted(const std::string &key, float cx, float cy, float scale, sf::Color tint);
     void drawSpritePartialFill(const std::string &key, float cx, float cy, float scale, float fill, bool fromLeft, sf::Color tint = sf::Color::White);
     void drawNavBar();
     float navBarHeight() const;
+
+    std::vector<std::pair<std::string, std::string>> availableFonts;
+    int fontIndex = 0;
+    bool fontPickerOpen = false;
+    float fontPickerScroll = 0.f;
+    std::map<int, sf::Font> fontPreviewCache;
 
     std::string draggingElement;
     sf::Vector2f dragOffset;

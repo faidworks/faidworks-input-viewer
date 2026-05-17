@@ -3,6 +3,8 @@
 #include "display_constants.h"
 #include <iostream>
 #include <cstdlib>
+#include <filesystem>
+#include <algorithm>
 
 sf::Color parseHexColor(const std::string &hex)
 {
@@ -23,15 +25,87 @@ Display::Display()
       font(),
       text(font, "", 18u)
 {
-    if (!font.openFromFile("resources/OpenDyslexic-Regular.otf"))
+    if (!font.openFromFile("resources/fonts/OpenDyslexic-Regular.otf"))
         std::cerr << "Failed to load font" << std::endl;
 
+    scanSystemFonts();
     loadTextures();
 
     if (tintShader.loadFromFile("resources/shaders/color_tint.frag", sf::Shader::Type::Fragment))
         shaderLoaded = true;
     else
         std::cerr << "Failed to load tint shader" << std::endl;
+}
+
+void Display::scanSystemFonts()
+{
+    namespace fs = std::filesystem;
+    availableFonts.clear();
+    availableFonts.push_back({"OpenDyslexic", "resources/fonts/OpenDyslexic-Regular.otf"});
+
+    std::vector<std::string> fontDirs;
+#ifdef _WIN32
+    const char *windir = std::getenv("WINDIR");
+    if (windir)
+        fontDirs.push_back(std::string(windir) + "\\Fonts");
+#elif __APPLE__
+    fontDirs = {"/Library/Fonts", "/System/Library/Fonts"};
+    const char *home = std::getenv("HOME");
+    if (home)
+        fontDirs.push_back(std::string(home) + "/Library/Fonts");
+#else
+    fontDirs = {"/usr/share/fonts", "/usr/local/share/fonts"};
+    const char *home = std::getenv("HOME");
+    if (home)
+    {
+        fontDirs.push_back(std::string(home) + "/.local/share/fonts");
+        fontDirs.push_back(std::string(home) + "/.fonts");
+    }
+#endif
+
+    for (const auto &dir : fontDirs)
+    {
+        try
+        {
+            if (!fs::exists(dir))
+                continue;
+            for (const auto &entry : fs::recursive_directory_iterator(dir))
+            {
+                if (!entry.is_regular_file())
+                    continue;
+                auto ext = toLower(entry.path().extension().string());
+                if (ext != ".ttf" && ext != ".otf")
+                    continue;
+                sf::Font testFont;
+                if (!testFont.openFromFile(entry.path().string()))
+                    continue;
+                if (testFont.getGlyph('A', 16, false).bounds.size == sf::Vector2f{0.f, 0.f})
+                    continue;
+                availableFonts.push_back({entry.path().stem().string(), entry.path().string()});
+            }
+        }
+        catch (...)
+        {
+        }
+    }
+
+    std::sort(availableFonts.begin() + 1, availableFonts.end());
+}
+
+void Display::loadFont(const std::string &path)
+{
+    if (!font.openFromFile(path))
+        std::cerr << "Failed to load font: " << path << std::endl;
+
+    for (int i = 0; i < (int)availableFonts.size(); i++)
+    {
+        if (availableFonts[i].second == path)
+        {
+            fontIndex = i;
+            return;
+        }
+    }
+    fontIndex = 0;
 }
 
 Display::~Display()

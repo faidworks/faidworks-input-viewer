@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include "display.h"
 #include "display_constants.h"
+#include <algorithm>
 
 void Display::renderSettings(const Settings &settings)
 {
@@ -82,9 +83,37 @@ void Display::renderSettings(const Settings &settings)
         }
     }
 
+    // Font selection
+    {
+        float rowY = baseY + 2.f * ROW_HEIGHT - settingsScroll;
+        if (rowY + ROW_HEIGHT >= baseY && rowY <= 600.f)
+        {
+            sf::RectangleShape row(sf::Vector2f(ROW_WIDTH, ROW_HEIGHT - 2.f));
+            row.setPosition(sf::Vector2f(ROW_X, rowY));
+            row.setFillColor(sf::Color(60, 50, 80));
+            row.setOutlineColor(sf::Color(100, 80, 140));
+            row.setOutlineThickness(1.f);
+            window.draw(row);
+
+            text.setCharacterSize(16u);
+            text.setFillColor(sf::Color(200, 180, 255));
+            text.setString("Font");
+            text.setPosition(sf::Vector2f(ROW_X + 10.f, rowY + 5.f));
+            window.draw(text);
+
+            std::string fontName = (fontIndex >= 0 && fontIndex < (int)availableFonts.size())
+                                       ? availableFonts[fontIndex].first
+                                       : "Unknown";
+            text.setFillColor(sf::Color(150, 255, 150));
+            text.setString(fontName + "  (click to change)");
+            text.setPosition(sf::Vector2f(ROW_X + 200.f, rowY + 5.f));
+            window.draw(text);
+        }
+    }
+
     for (int i = 0; i < (int)GAMEPAD_BUTTONS.size(); i++)
     {
-        float rowY = baseY + (i + 2) * ROW_HEIGHT - settingsScroll;
+        float rowY = baseY + (i + 3) * ROW_HEIGHT - settingsScroll;
         if (rowY + ROW_HEIGHT < baseY || rowY > 600.f)
             continue;
         bool isDetecting = (detectingIndex == i);
@@ -190,6 +219,87 @@ void Display::renderSettings(const Settings &settings)
             text.setString(editing ? hexVal + "_" : hexVal);
             text.setPosition(sf::Vector2f(activeX + 18.f, rowY + 8.f));
             window.draw(text);
+        }
+    }
+
+    if (fontPickerOpen)
+    {
+        sf::RectangleShape overlay(sf::Vector2f(800.f, 600.f));
+        overlay.setFillColor(sf::Color(0, 0, 0, 150));
+        window.draw(overlay);
+
+        const float PX = 100.f, PY = 50.f, PW = 600.f, PH = 470.f;
+        const float TITLE_H = 40.f, PROW_H = 32.f;
+        float listY = PY + TITLE_H;
+        float listH = PH - TITLE_H;
+
+        sf::RectangleShape dialog(sf::Vector2f(PW, PH));
+        dialog.setPosition({PX, PY});
+        dialog.setFillColor(sf::Color(35, 35, 50));
+        dialog.setOutlineColor(sf::Color(100, 80, 140));
+        dialog.setOutlineThickness(2.f);
+        window.draw(dialog);
+
+        text.setCharacterSize(18u);
+        text.setFillColor(sf::Color::White);
+        text.setString("Select Font");
+        text.setPosition({PX + 15.f, PY + 8.f});
+        window.draw(text);
+
+        sf::RectangleShape sep(sf::Vector2f(PW - 4.f, 1.f));
+        sep.setPosition({PX + 2.f, listY});
+        sep.setFillColor(sf::Color(100, 80, 140));
+        window.draw(sep);
+
+        int firstVis = std::max(0, (int)(fontPickerScroll / PROW_H));
+        int lastVis = std::min((int)availableFonts.size() - 1, firstVis + (int)(listH / PROW_H) + 1);
+
+        for (auto it = fontPreviewCache.begin(); it != fontPreviewCache.end();)
+        {
+            if (it->first < firstVis - 5 || it->first > lastVis + 5)
+                it = fontPreviewCache.erase(it);
+            else
+                ++it;
+        }
+
+        for (int i = firstVis; i <= lastVis; i++)
+        {
+            float rowY = listY + i * PROW_H - fontPickerScroll;
+            if (rowY + PROW_H < listY || rowY > PY + PH)
+                continue;
+
+            bool selected = (i == fontIndex);
+
+            sf::RectangleShape row(sf::Vector2f(PW - 4.f, PROW_H - 2.f));
+            row.setPosition({PX + 2.f, rowY});
+            row.setFillColor(selected ? sf::Color(80, 60, 120) : sf::Color(45, 45, 60));
+            row.setOutlineColor(sf::Color(70, 70, 90));
+            row.setOutlineThickness(0.5f);
+            window.draw(row);
+
+            auto cacheIt = fontPreviewCache.find(i);
+            if (cacheIt == fontPreviewCache.end())
+            {
+                sf::Font previewFont;
+                if (previewFont.openFromFile(availableFonts[i].second))
+                    cacheIt = fontPreviewCache.emplace(i, std::move(previewFont)).first;
+            }
+
+            if (cacheIt != fontPreviewCache.end())
+            {
+                sf::Text previewText(cacheIt->second, availableFonts[i].first, 16u);
+                previewText.setFillColor(selected ? sf::Color(200, 255, 200) : sf::Color(200, 200, 220));
+                previewText.setPosition({PX + 15.f, rowY + 5.f});
+                window.draw(previewText);
+            }
+            else
+            {
+                text.setCharacterSize(16u);
+                text.setFillColor(selected ? sf::Color(200, 255, 200) : sf::Color(200, 200, 220));
+                text.setString(availableFonts[i].first);
+                text.setPosition({PX + 15.f, rowY + 5.f});
+                window.draw(text);
+            }
         }
     }
 

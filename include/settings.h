@@ -54,6 +54,7 @@ public:
     std::map<std::string, InputMapping> mappings;
     ActiveStyle activeStyle = ActiveStyle::Filled;
     std::string bgColor = "000000";
+    std::string fontPath = "resources/fonts/OpenDyslexic-Regular.otf";
     std::map<std::string, ElementLayout> layout;
 
     std::map<std::string, std::string> elementInactiveColors;

@@ -60,6 +60,12 @@ void Settings::load()
             continue;
         }
 
+        if (button == "_fontPath")
+        {
+            fontPath = value;
+            continue;
+        }
+
         if (button.rfind("_colorInactive_", 0) == 0)
         {
             std::string elem = button.substr(15);
@@ -131,6 +137,7 @@ void Settings::save()
 
     file << "_activeStyle=" << (activeStyle == ActiveStyle::Pressed ? "pressed" : "filled") << "\n";
     file << "_bgColor=" << bgColor << "\n";
+    file << "_fontPath=" << fontPath << "\n";
 
     for (const auto &[elem, color] : elementInactiveColors)
         file << "_colorInactive_" << elem << "=" << color << "\n";

@@ -3,6 +3,13 @@
 #include "display_constants.h"
 #include <algorithm>
 
+static const float PICKER_X = 100.f;
+static const float PICKER_Y = 50.f;
+static const float PICKER_W = 600.f;
+static const float PICKER_H = 470.f;
+static const float PICKER_TITLE_H = 40.f;
+static const float PICKER_ROW_H = 32.f;
+
 void Display::processEvents(Settings &settings, Controller &controller)
 {
     while (const std::optional event = window.pollEvent())
@@ -15,6 +22,13 @@ void Display::processEvents(Settings &settings, Controller &controller)
 
         if (const auto *keyPressed = event->getIf<sf::Event::KeyPressed>())
         {
+            if (fontPickerOpen && viewMode == ViewMode::Settings)
+            {
+                if (keyPressed->scancode == sf::Keyboard::Scancode::Escape)
+                    fontPickerOpen = false;
+                continue;
+            }
+
             if (keyPressed->scancode == sf::Keyboard::Scancode::Escape)
             {
                 if (editingBgColor)
@@ -122,12 +136,19 @@ void Display::processEvents(Settings &settings, Controller &controller)
         {
             if (viewMode == ViewMode::Settings)
             {
-                settingsScroll -= scroll->delta * 30.f;
-                float maxScroll = std::max(0.f, ROW_START_Y + (float)(GAMEPAD_BUTTONS.size() + 2) * ROW_HEIGHT - 600.f + navBarHeight());
-                if (settingsScroll < 0.f)
-                    settingsScroll = 0.f;
-                if (settingsScroll > maxScroll)
-                    settingsScroll = maxScroll;
+                if (fontPickerOpen)
+                {
+                    fontPickerScroll -= scroll->delta * 30.f;
+                    float listH = PICKER_H - PICKER_TITLE_H;
+                    float maxScroll = std::max(0.f, (float)availableFonts.size() * PICKER_ROW_H - listH);
+                    fontPickerScroll = std::clamp(fontPickerScroll, 0.f, maxScroll);
+                }
+                else
+                {
+                    settingsScroll -= scroll->delta * 30.f;
+                    float maxScroll = std::max(0.f, ROW_START_Y + (float)(GAMEPAD_BUTTONS.size() + 3) * ROW_HEIGHT - 600.f + navBarHeight());
+                    settingsScroll = std::clamp(settingsScroll, 0.f, maxScroll);
+                }
             }
         }
 
@@ -170,9 +191,39 @@ void Display::processEvents(Settings &settings, Controller &controller)
                         continue;
                     }
 
+                    if (fontPickerOpen)
+                    {
+                        float listY = PICKER_Y + PICKER_TITLE_H;
+                        if (mx >= PICKER_X && mx <= PICKER_X + PICKER_W &&
+                            my >= listY && my <= PICKER_Y + PICKER_H)
+                        {
+                            int clicked = (int)((my - listY + fontPickerScroll) / PICKER_ROW_H);
+                            if (clicked >= 0 && clicked < (int)availableFonts.size())
+                            {
+                                fontIndex = clicked;
+                                settings.fontPath = availableFonts[fontIndex].second;
+                                loadFont(settings.fontPath);
+                                fontPickerOpen = false;
+                            }
+                        }
+                        else
+                        {
+                            fontPickerOpen = false;
+                        }
+                        continue;
+                    }
+
+                    float fontRowY = ROW_START_Y + 2 * ROW_HEIGHT + offy - settingsScroll;
+                    if (mx >= ROW_X && mx <= ROW_X + ROW_WIDTH && my >= fontRowY && my <= fontRowY + ROW_HEIGHT - 2.f)
+                    {
+                        fontPickerOpen = true;
+                        fontPickerScroll = 0.f;
+                        continue;
+                    }
+
                     for (int i = 0; i < (int)GAMEPAD_BUTTONS.size(); i++)
                     {
-                        float rowY = ROW_START_Y + (i + 2) * ROW_HEIGHT + offy - settingsScroll;
+                        float rowY = ROW_START_Y + (i + 3) * ROW_HEIGHT + offy - settingsScroll;
                         if (my >= rowY && my <= rowY + ROW_HEIGHT - 2.f)
                         {
                             float colorX = ROW_X + 480.f;

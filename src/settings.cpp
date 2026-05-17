@@ -11,16 +11,16 @@ static fs::path configDir()
 {
 #ifdef _WIN32
     const char *appdata = std::getenv("APPDATA");
-    fs::path dir = appdata ? fs::path(std::string(appdata)) / "input-viewer" : fs::current_path();
+    fs::path dir = appdata ? fs::path(std::string(appdata)) / "FaidworksInputViewer" : fs::current_path();
 #else
     const char *xdg = std::getenv("XDG_CONFIG_HOME");
     fs::path dir;
     if (xdg)
-        dir = fs::path(std::string(xdg)) / "input-viewer";
+        dir = fs::path(std::string(xdg)) / "faidworks-input-viewer";
     else
     {
         const char *home = std::getenv("HOME");
-        dir = home ? fs::path(std::string(home)) / ".config" / "input-viewer" : fs::current_path();
+        dir = home ? fs::path(std::string(home)) / ".config" / "faidworks-input-viewer" : fs::current_path();
     }
 #endif
     fs::create_directories(dir);

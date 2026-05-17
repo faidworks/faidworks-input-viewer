@@ -47,4 +47,4 @@ Configure input mappings, active style (filled/pressed), background color, per-b
 
 ## Configuration
 
-Settings are stored in `~/.config/input-viewer/settings.txt` (Linux), `~/Library/Application Support/input-viewer/` (macOS), or `%APPDATA%/input-viewer/` (Windows).
+Settings are stored in `~/.config/faidworks-input-viewer/` (Linux), `~/Library/Application Support/faidworks-input-viewer/` (macOS), or `%APPDATA%/FaidworksInputViewer/` (Windows).

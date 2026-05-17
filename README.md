@@ -4,13 +4,24 @@ A native gamepad input viewer built with SFML and SDL3. Displays controller inpu
 
 ## Building
 
-Requires CMake 3.10+, SFML 3, and SDL3.
+Requires CMake 3.10+. Dependencies (SFML 3, SDL3) are fetched automatically via CMake FetchContent.
+
+### Linux
 
 ```sh
-cmake -B build_dir -S .
-cmake --build build_dir
-./build/faidworks-input-viewer
+chmod +x ./build.sh
+./build.sh
 ```
+
+### Windows
+
+Run from a Visual Studio Developer Command Prompt:
+
+```bat
+build-win.bat
+```
+
+Produces a statically linked exe at `build_win\src\Release\faidworks-input-viewer.exe` with no external DLL dependencies.
 
 ## Usage
 

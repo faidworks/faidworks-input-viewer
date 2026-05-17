@@ -39,6 +39,12 @@ Drag elements to reposition them. The layout is saved automatically on exit.
 
 ![Layout tab](resources/layout.png)
 
+### History
+
+Shows a scrolling log of recent inputs with frame durations. Each row displays which buttons were held and how long since the previous input.
+
+![History tab](resources/history.png)
+
 ### Settings
 
 Configure input mappings, active style (filled/pressed), background color, per-button colors, and font.

@@ -1,6 +1,6 @@
 # CMake minimum version and project name
 cmake_minimum_required(VERSION 4.1)
-project(MyControllerApp)
+project(FaidworksInputViewer)
 
 # C++ standards
 set(CMAKE_CXX_STANDARD 17)
@@ -50,16 +50,16 @@ file(GLOB SOURCES
 )
 
 # Create a library from the source files
-add_library(MyControllerLib STATIC ${SOURCES})
+add_library(faidworks-input-viewer-lib STATIC ${SOURCES})
 
 # Optionally create an executable
-add_executable(MyControllerApp ${SOURCES})
-target_link_libraries(MyControllerApp PRIVATE MyControllerLib)
+add_executable(faidworks-input-viewer ${SOURCES})
+target_link_libraries(faidworks-input-viewer PRIVATE faidworks-input-viewer-lib)
 
 
 # Link against the appropriate libraries based on platform
 if (WIN32)
-    target_link_libraries(MyControllerApp PRIVATE Xinput SFML::Graphics SFML::Audio SFML::Network)
+    target_link_libraries(faidworks-input-viewer PRIVATE Xinput SFML::Graphics SFML::Audio SFML::Network)
 else()
-    target_link_libraries(MyControllerApp PRIVATE SDL3::SDL3 SDL3::Headers SFML::Graphics SFML::Audio SFML::Network)
+    target_link_libraries(faidworks-input-viewer PRIVATE SDL3::SDL3 SDL3::Headers SFML::Graphics SFML::Audio SFML::Network)
 endif()

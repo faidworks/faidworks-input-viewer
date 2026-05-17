@@ -21,7 +21,7 @@ sf::Color parseHexColor(const std::string &hex)
 }
 
 Display::Display()
-    : window(sf::VideoMode({800u, 600u}), "Input Viewer  |  Alt: Menu"),
+    : window(sf::VideoMode({800u, 600u}), "Faidworks Input Viewer  |  Alt: Menu"),
       font(),
       text(font, "", 18u)
 {

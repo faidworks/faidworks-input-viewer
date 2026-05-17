@@ -43,6 +43,7 @@
 # CMake generated files
 build/
 build_dir/
+build_win/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake

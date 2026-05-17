@@ -19,6 +19,8 @@ include_directories(${GTEST_INCLUDE_DIRS})
 file(GLOB TEST_SOURCES
     "test_main.cpp"
     "test_controller.cpp"
+    "test_settings.cpp"
+    "test_display_utils.cpp"
 )
 
 # Create the test executable

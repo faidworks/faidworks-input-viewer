@@ -31,9 +31,12 @@ private:
     float settingsScroll = 0.f;
 
     std::map<std::string, sf::Texture> textures;
+    sf::Shader tintShader;
+    bool shaderLoaded = false;
     void loadTextures();
     void drawSpriteCentered(const std::string &key, float cx, float cy, float scale);
-    void drawSpritePartialFill(const std::string &key, float cx, float cy, float scale, float fill, bool fromLeft);
+    void drawSpriteTinted(const std::string &key, float cx, float cy, float scale, sf::Color tint);
+    void drawSpritePartialFill(const std::string &key, float cx, float cy, float scale, float fill, bool fromLeft, sf::Color tint = sf::Color::White);
     void drawNavBar();
     float navBarHeight() const;
 
@@ -42,6 +45,10 @@ private:
 
     bool editingBgColor = false;
     std::string bgColorInput;
+
+    int editingColorIndex = -1;
+    bool editingColorIsActive = false;
+    std::string colorInput;
 };
 
 sf::Color parseHexColor(const std::string &hex);

@@ -60,6 +60,20 @@ void Settings::load()
             continue;
         }
 
+        if (button.rfind("_colorInactive_", 0) == 0)
+        {
+            std::string elem = button.substr(15);
+            elementInactiveColors[elem] = value;
+            continue;
+        }
+
+        if (button.rfind("_colorActive_", 0) == 0)
+        {
+            std::string elem = button.substr(13);
+            elementActiveColors[elem] = value;
+            continue;
+        }
+
         auto colon1 = value.find(':');
         auto colon2 = value.find(':', colon1 + 1);
         if (colon1 == std::string::npos || colon2 == std::string::npos)
@@ -97,6 +111,18 @@ void Settings::load()
     }
 }
 
+std::string Settings::getInactiveColor(const std::string &element) const
+{
+    auto it = elementInactiveColors.find(element);
+    return (it != elementInactiveColors.end()) ? it->second : "FFFFFF";
+}
+
+std::string Settings::getActiveColor(const std::string &element) const
+{
+    auto it = elementActiveColors.find(element);
+    return (it != elementActiveColors.end()) ? it->second : "FFFFFF";
+}
+
 void Settings::save()
 {
     std::ofstream file(configPath("settings.txt"));
@@ -105,6 +131,11 @@ void Settings::save()
 
     file << "_activeStyle=" << (activeStyle == ActiveStyle::Pressed ? "pressed" : "filled") << "\n";
     file << "_bgColor=" << bgColor << "\n";
+
+    for (const auto &[elem, color] : elementInactiveColors)
+        file << "_colorInactive_" << elem << "=" << color << "\n";
+    for (const auto &[elem, color] : elementActiveColors)
+        file << "_colorActive_" << elem << "=" << color << "\n";
 
     for (const auto &[button, mapping] : mappings)
     {

@@ -21,7 +21,8 @@ static bool isMappingActive(const InputMapping &mapping, const Controller &contr
 static void drawButtonImage(Display &d, const std::map<std::string, sf::Texture> &textures,
                             sf::RenderWindow &window, sf::Text &text,
                             const std::string &btn, float cx, float cy,
-                            bool active, const std::string &inactiveSuffix)
+                            bool active, const std::string &inactiveSuffix,
+                            sf::Color tint)
 {
     std::string prefix = toLower(btn);
 
@@ -39,6 +40,7 @@ static void drawButtonImage(Display &d, const std::map<std::string, sf::Texture>
         sprite.setOrigin({size.x / 2.f, size.y / 2.f});
         sprite.setScale({BTN_SCALE, BTN_SCALE});
         sprite.setPosition({cx, cy - 8.f});
+        sprite.setColor(tint);
         window.draw(sprite);
     }
     else
@@ -79,7 +81,10 @@ void Display::render(const Settings &settings, const Controller &controller)
             continue;
         float cx = it->second.x;
         float cy = it->second.y + offy;
-        drawButtonImage(*this, textures, window, text, btn, cx, cy, isActive(btn), inactiveSuffix);
+        bool active = isActive(btn);
+        std::string elem = elementForButton(btn);
+        sf::Color tint = parseHexColor(active ? settings.getActiveColor(elem) : settings.getInactiveColor(elem));
+        drawButtonImage(*this, textures, window, text, btn, cx, cy, active, inactiveSuffix, tint);
     }
 
     bool filled = (settings.activeStyle == ActiveStyle::Filled);
@@ -93,7 +98,9 @@ void Display::render(const Settings &settings, const Controller &controller)
         float cy = layoutIt->second.y + offy;
 
         std::string prefix = toLower(btn);
-        drawSpriteCentered(prefix + (filled ? "-filled" : "-outline"), cx, cy - 8.f, BTN_SCALE);
+        sf::Color inactiveTint = parseHexColor(settings.getInactiveColor(btn));
+        sf::Color activeTint = parseHexColor(settings.getActiveColor(btn));
+        drawSpriteTinted(prefix + (filled ? "-filled" : "-outline"), cx, cy - 8.f, BTN_SCALE, inactiveTint);
 
         float fill = 0.f;
         auto mapIt = settings.mappings.find(btn);
@@ -101,7 +108,7 @@ void Display::render(const Settings &settings, const Controller &controller)
             fill = controller.getAxisValue(mapIt->second.code) / 32768.f;
 
         if (fill > 0.f)
-            drawSpritePartialFill(prefix + "-pressed", cx, cy - 8.f, BTN_SCALE, fill, fromLeft);
+            drawSpritePartialFill(prefix + "-pressed", cx, cy - 8.f, BTN_SCALE, fill, fromLeft, activeTint);
     };
     drawTrigger("LT", false);
     drawTrigger("RT", true);
@@ -114,15 +121,17 @@ void Display::render(const Settings &settings, const Controller &controller)
             float cx = it->second.x;
             float cy = it->second.y + offy;
 
-            drawSpriteCentered(filled ? "dpad-gate-filled" : "dpad-gate", cx, cy, WIDGET_SCALE);
+            sf::Color dpadInactive = parseHexColor(settings.getInactiveColor("DPad"));
+            sf::Color dpadActive = parseHexColor(settings.getActiveColor("DPad"));
+            drawSpriteTinted(filled ? "dpad-gate-filled" : "dpad-gate", cx, cy, WIDGET_SCALE, dpadInactive);
             if (isActive("DPad Up"))
-                drawSpriteCentered("dpad-pressed-up", cx, cy, WIDGET_SCALE);
+                drawSpriteTinted("dpad-pressed-up", cx, cy, WIDGET_SCALE, dpadActive);
             if (isActive("DPad Down"))
-                drawSpriteCentered("dpad-pressed-down", cx, cy, WIDGET_SCALE);
+                drawSpriteTinted("dpad-pressed-down", cx, cy, WIDGET_SCALE, dpadActive);
             if (isActive("DPad Left"))
-                drawSpriteCentered("dpad-pressed-left", cx, cy, WIDGET_SCALE);
+                drawSpriteTinted("dpad-pressed-left", cx, cy, WIDGET_SCALE, dpadActive);
             if (isActive("DPad Right"))
-                drawSpriteCentered("dpad-pressed-right", cx, cy, WIDGET_SCALE);
+                drawSpriteTinted("dpad-pressed-right", cx, cy, WIDGET_SCALE, dpadActive);
         }
     }
 
@@ -138,6 +147,9 @@ void Display::render(const Settings &settings, const Controller &controller)
         float cx = it->second.x;
         float cy = it->second.y + offy;
 
+        sf::Color stickInactive = parseHexColor(settings.getInactiveColor(layoutKey));
+        sf::Color stickActive = parseHexColor(settings.getActiveColor(layoutKey));
+
         float dx = 0.f, dy = 0.f;
         auto itX = settings.mappings.find(axisXBtn);
         if (itX != settings.mappings.end() && itX->second.type == InputType::GamepadAxis)
@@ -147,7 +159,7 @@ void Display::render(const Settings &settings, const Controller &controller)
             dy = controller.getAxisValue(itY->second.code) / 32768.f;
 
         std::string gateKey = baseKey + "-gate" + (filled ? "-filled" : "");
-        drawSpriteCentered(gateKey, cx, cy, WIDGET_SCALE);
+        drawSpriteTinted(gateKey, cx, cy, WIDGET_SCALE, stickInactive);
 
         float maxDisp = 20.f * WIDGET_SCALE;
         float stickX = cx + dx * maxDisp;
@@ -162,7 +174,9 @@ void Display::render(const Settings &settings, const Controller &controller)
 
         if (!textures.count(sKey))
             sKey = baseKey;
-        drawSpriteCentered(sKey, stickX, stickY, WIDGET_SCALE);
+
+        bool stickMoved = (std::abs(dx) > 0.1f || std::abs(dy) > 0.1f || l3Active);
+        drawSpriteTinted(sKey, stickX, stickY, WIDGET_SCALE, stickMoved ? stickActive : stickInactive);
     };
 
     drawStick("LStick", "lstick", "LStick X", "LStick Y", "L3");

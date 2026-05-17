@@ -146,6 +146,51 @@ void Display::renderSettings(const Settings &settings)
         text.setString(mappingStr);
         text.setPosition(sf::Vector2f(ROW_X + 200.f, rowY + 5.f));
         window.draw(text);
+
+        // Color swatches to the right
+        std::string elem = elementForButton(GAMEPAD_BUTTONS[i]);
+        float colorX = ROW_X + 480.f;
+
+        // Inactive color swatch
+        {
+            bool editing = (editingColorIndex == i && !editingColorIsActive);
+            std::string hexVal = editing ? colorInput : settings.getInactiveColor(elem);
+            sf::Color swatchColor = parseHexColor(hexVal);
+
+            sf::RectangleShape swatch(sf::Vector2f(14.f, 14.f));
+            swatch.setPosition(sf::Vector2f(colorX, rowY + 7.f));
+            swatch.setFillColor(swatchColor);
+            swatch.setOutlineColor(editing ? sf::Color::Yellow : sf::Color(80, 80, 100));
+            swatch.setOutlineThickness(1.f);
+            window.draw(swatch);
+
+            text.setCharacterSize(11u);
+            text.setFillColor(editing ? sf::Color::Yellow : sf::Color(160, 160, 180));
+            text.setString(editing ? hexVal + "_" : hexVal);
+            text.setPosition(sf::Vector2f(colorX + 18.f, rowY + 8.f));
+            window.draw(text);
+        }
+
+        // Active color swatch
+        {
+            float activeX = colorX + 100.f;
+            bool editing = (editingColorIndex == i && editingColorIsActive);
+            std::string hexVal = editing ? colorInput : settings.getActiveColor(elem);
+            sf::Color swatchColor = parseHexColor(hexVal);
+
+            sf::RectangleShape swatch(sf::Vector2f(14.f, 14.f));
+            swatch.setPosition(sf::Vector2f(activeX, rowY + 7.f));
+            swatch.setFillColor(swatchColor);
+            swatch.setOutlineColor(editing ? sf::Color::Yellow : sf::Color(80, 80, 100));
+            swatch.setOutlineThickness(1.f);
+            window.draw(swatch);
+
+            text.setCharacterSize(11u);
+            text.setFillColor(editing ? sf::Color::Yellow : sf::Color(160, 160, 180));
+            text.setString(editing ? hexVal + "_" : hexVal);
+            text.setPosition(sf::Vector2f(activeX + 18.f, rowY + 8.f));
+            window.draw(text);
+        }
     }
 
     window.display();

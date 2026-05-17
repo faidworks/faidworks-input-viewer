@@ -22,8 +22,37 @@ void Display::processEvents(Settings &settings, Controller &controller)
                     editingBgColor = false;
                     continue;
                 }
+                if (editingColorIndex >= 0)
+                {
+                    editingColorIndex = -1;
+                    continue;
+                }
                 window.close();
                 return;
+            }
+
+            if (editingColorIndex >= 0 && viewMode == ViewMode::Settings)
+            {
+                if (keyPressed->scancode == sf::Keyboard::Scancode::Enter)
+                {
+                    if (colorInput.size() == 6)
+                    {
+                        std::string elem = elementForButton(GAMEPAD_BUTTONS[editingColorIndex]);
+                        if (editingColorIsActive)
+                            settings.elementActiveColors[elem] = colorInput;
+                        else
+                            settings.elementInactiveColors[elem] = colorInput;
+                    }
+                    editingColorIndex = -1;
+                    continue;
+                }
+                if (keyPressed->scancode == sf::Keyboard::Scancode::Backspace)
+                {
+                    if (!colorInput.empty())
+                        colorInput.pop_back();
+                    continue;
+                }
+                continue;
             }
 
             if (editingBgColor && viewMode == ViewMode::Settings)
@@ -67,6 +96,16 @@ void Display::processEvents(Settings &settings, Controller &controller)
 
         if (const auto *textEvent = event->getIf<sf::Event::TextEntered>())
         {
+            if (editingColorIndex >= 0 && viewMode == ViewMode::Settings)
+            {
+                char c = static_cast<char>(textEvent->unicode);
+                if (colorInput.size() < 6 &&
+                    ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))
+                {
+                    colorInput += static_cast<char>(std::toupper(c));
+                }
+                continue;
+            }
             if (editingBgColor && viewMode == ViewMode::Settings)
             {
                 char c = static_cast<char>(textEvent->unicode);
@@ -134,10 +173,37 @@ void Display::processEvents(Settings &settings, Controller &controller)
                     for (int i = 0; i < (int)GAMEPAD_BUTTONS.size(); i++)
                     {
                         float rowY = ROW_START_Y + (i + 2) * ROW_HEIGHT + offy - settingsScroll;
-                        if (mx >= ROW_X && mx <= ROW_X + ROW_WIDTH && my >= rowY && my <= rowY + ROW_HEIGHT - 2.f)
+                        if (my >= rowY && my <= rowY + ROW_HEIGHT - 2.f)
                         {
-                            detectingIndex = i;
-                            break;
+                            float colorX = ROW_X + 480.f;
+                            float activeX = colorX + 100.f;
+
+                            if (mx >= activeX && mx <= activeX + 90.f)
+                            {
+                                std::string elem = elementForButton(GAMEPAD_BUTTONS[i]);
+                                editingColorIndex = i;
+                                editingColorIsActive = true;
+                                colorInput = settings.getActiveColor(elem);
+                                editingBgColor = false;
+                                detectingIndex = -1;
+                                break;
+                            }
+                            if (mx >= colorX && mx <= colorX + 90.f)
+                            {
+                                std::string elem = elementForButton(GAMEPAD_BUTTONS[i]);
+                                editingColorIndex = i;
+                                editingColorIsActive = false;
+                                colorInput = settings.getInactiveColor(elem);
+                                editingBgColor = false;
+                                detectingIndex = -1;
+                                break;
+                            }
+                            if (mx >= ROW_X && mx <= ROW_X + 470.f)
+                            {
+                                detectingIndex = i;
+                                editingColorIndex = -1;
+                                break;
+                            }
                         }
                     }
                 }

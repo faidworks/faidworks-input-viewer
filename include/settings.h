@@ -32,6 +32,17 @@ inline const std::vector<std::string> LAYOUT_ELEMENTS = {
     "DPad", "LStick", "RStick"
 };
 
+inline std::string elementForButton(const std::string &btn)
+{
+    if (btn == "DPad Up" || btn == "DPad Down" || btn == "DPad Left" || btn == "DPad Right")
+        return "DPad";
+    if (btn == "LStick X" || btn == "LStick Y" || btn == "L3")
+        return "LStick";
+    if (btn == "RStick X" || btn == "RStick Y" || btn == "R3")
+        return "RStick";
+    return btn;
+}
+
 class Settings
 {
 public:
@@ -44,6 +55,12 @@ public:
     ActiveStyle activeStyle = ActiveStyle::Filled;
     std::string bgColor = "000000";
     std::map<std::string, ElementLayout> layout;
+
+    std::map<std::string, std::string> elementInactiveColors;
+    std::map<std::string, std::string> elementActiveColors;
+
+    std::string getInactiveColor(const std::string &element) const;
+    std::string getActiveColor(const std::string &element) const;
 };
 
 #endif // SETTINGS_H

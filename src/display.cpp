@@ -27,6 +27,11 @@ Display::Display()
         std::cerr << "Failed to load font" << std::endl;
 
     loadTextures();
+
+    if (tintShader.loadFromFile("resources/shaders/color_tint.frag", sf::Shader::Type::Fragment))
+        shaderLoaded = true;
+    else
+        std::cerr << "Failed to load tint shader" << std::endl;
 }
 
 Display::~Display()
@@ -95,6 +100,11 @@ void Display::loadTextures()
 
 void Display::drawSpriteCentered(const std::string &key, float cx, float cy, float scale)
 {
+    drawSpriteTinted(key, cx, cy, scale, sf::Color::White);
+}
+
+void Display::drawSpriteTinted(const std::string &key, float cx, float cy, float scale, sf::Color tint)
+{
     auto it = textures.find(key);
     if (it == textures.end())
         return;
@@ -104,10 +114,21 @@ void Display::drawSpriteCentered(const std::string &key, float cx, float cy, flo
     sprite.setOrigin({size.x / 2.f, size.y / 2.f});
     sprite.setScale({scale, scale});
     sprite.setPosition({cx, cy});
-    window.draw(sprite);
+
+    if (shaderLoaded && tint != sf::Color::White)
+    {
+        sf::Glsl::Vec4 tintVec(tint.r / 255.f, tint.g / 255.f, tint.b / 255.f, tint.a / 255.f);
+        tintShader.setUniform("tintColor", tintVec);
+        tintShader.setUniform("texture", sf::Shader::CurrentTexture);
+        window.draw(sprite, sf::RenderStates(&tintShader));
+    }
+    else
+    {
+        window.draw(sprite);
+    }
 }
 
-void Display::drawSpritePartialFill(const std::string &key, float cx, float cy, float scale, float fill, bool fromLeft)
+void Display::drawSpritePartialFill(const std::string &key, float cx, float cy, float scale, float fill, bool fromLeft, sf::Color tint)
 {
     auto it = textures.find(key);
     if (it == textures.end() || fill <= 0.f)
@@ -134,7 +155,18 @@ void Display::drawSpritePartialFill(const std::string &key, float cx, float cy, 
     sprite.setOrigin({originX, size.y / 2.f});
     sprite.setScale({scale, scale});
     sprite.setPosition({cx, cy});
-    window.draw(sprite);
+
+    if (shaderLoaded && tint != sf::Color::White)
+    {
+        sf::Glsl::Vec4 tintVec(tint.r / 255.f, tint.g / 255.f, tint.b / 255.f, tint.a / 255.f);
+        tintShader.setUniform("tintColor", tintVec);
+        tintShader.setUniform("texture", sf::Shader::CurrentTexture);
+        window.draw(sprite, sf::RenderStates(&tintShader));
+    }
+    else
+    {
+        window.draw(sprite);
+    }
 }
 
 void Display::drawNavBar()

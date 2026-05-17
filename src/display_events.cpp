@@ -87,11 +87,32 @@ void Display::processEvents(Settings &settings, Controller &controller)
                 continue;
             }
 
+            if (detectingHistoryKey && viewMode == ViewMode::Settings)
+            {
+                if (keyPressed->scancode == sf::Keyboard::Scancode::Escape)
+                {
+                    detectingHistoryKey = false;
+                    continue;
+                }
+                settings.historyKey = static_cast<int>(keyPressed->scancode);
+                settings.historyKeyName = sf::Keyboard::getDescription(keyPressed->scancode).toAnsiString();
+                detectingHistoryKey = false;
+                continue;
+            }
+
             if ((keyPressed->scancode == sf::Keyboard::Scancode::LAlt ||
                  keyPressed->scancode == sf::Keyboard::Scancode::RAlt) &&
                 detectingIndex < 0)
             {
                 navBarVisible = !navBarVisible;
+                continue;
+            }
+
+            if (keyPressed->scancode == static_cast<sf::Keyboard::Scancode>(settings.historyKey) &&
+                detectingIndex < 0 && !editingBgColor && editingColorIndex < 0 &&
+                !detectingHistoryKey)
+            {
+                toggleHistoryWindow();
                 continue;
             }
 
@@ -146,7 +167,7 @@ void Display::processEvents(Settings &settings, Controller &controller)
                 else
                 {
                     settingsScroll -= scroll->delta * 30.f;
-                    float maxScroll = std::max(0.f, ROW_START_Y + (float)(GAMEPAD_BUTTONS.size() + 3) * ROW_HEIGHT - 600.f + navBarHeight());
+                    float maxScroll = std::max(0.f, ROW_START_Y + (float)(GAMEPAD_BUTTONS.size() + 8) * ROW_HEIGHT - 600.f + navBarHeight());
                     settingsScroll = std::clamp(settingsScroll, 0.f, maxScroll);
                 }
             }
@@ -161,11 +182,19 @@ void Display::processEvents(Settings &settings, Controller &controller)
 
                 if (navBarVisible && my < NAV_HEIGHT)
                 {
-                    float tabW = 800.f / 3.f;
+                    float tabW = 800.f / 4.f;
                     int tabIdx = static_cast<int>(mx / tabW);
-                    ViewMode modes[] = {ViewMode::Main, ViewMode::Layout, ViewMode::Settings};
-                    if (tabIdx >= 0 && tabIdx < 3)
-                        viewMode = modes[tabIdx];
+                    if (tabIdx == 1)
+                    {
+                        toggleHistoryWindow();
+                    }
+                    else
+                    {
+                        // tabs: 0=Main, 2=Layout, 3=Settings
+                        ViewMode modes[] = {ViewMode::Main, ViewMode::Main, ViewMode::Layout, ViewMode::Settings};
+                        if (tabIdx >= 0 && tabIdx < 4 && tabIdx != 1)
+                            viewMode = modes[tabIdx];
+                    }
                     continue;
                 }
 
@@ -221,9 +250,69 @@ void Display::processEvents(Settings &settings, Controller &controller)
                         continue;
                     }
 
+                    float fpsRowY = ROW_START_Y + 3 * ROW_HEIGHT + offy - settingsScroll;
+                    if (mx >= ROW_X && mx <= ROW_X + ROW_WIDTH && my >= fpsRowY && my <= fpsRowY + ROW_HEIGHT - 2.f)
+                    {
+                        static const int fpsOptions[] = {30, 60, 120, 144, 170, 0};
+                        static const int numOptions = 6;
+                        int cur = 0;
+                        for (int j = 0; j < numOptions; j++)
+                        {
+                            if (fpsOptions[j] == settings.fpsLimit)
+                            {
+                                cur = j;
+                                break;
+                            }
+                        }
+                        settings.fpsLimit = fpsOptions[(cur + 1) % numOptions];
+                        setFramerateLimit(settings.fpsLimit);
+                        continue;
+                    }
+
+                    float dzRowY = ROW_START_Y + 4 * ROW_HEIGHT + offy - settingsScroll;
+                    float sliderX = ROW_X + 200.f;
+                    float sliderW = 350.f;
+                    if (mx >= sliderX - 10.f && mx <= sliderX + sliderW + 10.f &&
+                        my >= dzRowY && my <= dzRowY + ROW_HEIGHT - 2.f)
+                    {
+                        draggingDeadzone = true;
+                        float t = std::clamp((mx - sliderX) / sliderW, 0.f, 1.f);
+                        settings.deadzone = static_cast<int>(t * 100.f);
+                        continue;
+                    }
+
+                    float gfRowY = ROW_START_Y + 5 * ROW_HEIGHT + offy - settingsScroll;
+                    float gfSliderX = ROW_X + 200.f;
+                    float gfSliderW = 350.f;
+                    if (mx >= gfSliderX - 10.f && mx <= gfSliderX + gfSliderW + 10.f &&
+                        my >= gfRowY && my <= gfRowY + ROW_HEIGHT - 2.f)
+                    {
+                        draggingGroupFrames = true;
+                        float t = std::clamp((mx - gfSliderX) / gfSliderW, 0.f, 1.f);
+                        settings.inputGroupFrames = static_cast<int>(t * 5.f + 0.5f);
+                        continue;
+                    }
+
+                    float hkRowY = ROW_START_Y + 6 * ROW_HEIGHT + offy - settingsScroll;
+                    if (mx >= ROW_X && mx <= ROW_X + ROW_WIDTH && my >= hkRowY && my <= hkRowY + ROW_HEIGHT - 2.f)
+                    {
+                        detectingHistoryKey = true;
+                        detectingIndex = -1;
+                        editingBgColor = false;
+                        editingColorIndex = -1;
+                        continue;
+                    }
+
+                    float tfRowY = ROW_START_Y + 7 * ROW_HEIGHT + offy - settingsScroll;
+                    if (mx >= ROW_X && mx <= ROW_X + ROW_WIDTH && my >= tfRowY && my <= tfRowY + ROW_HEIGHT - 2.f)
+                    {
+                        settings.trackFrames = !settings.trackFrames;
+                        continue;
+                    }
+
                     for (int i = 0; i < (int)GAMEPAD_BUTTONS.size(); i++)
                     {
-                        float rowY = ROW_START_Y + (i + 3) * ROW_HEIGHT + offy - settingsScroll;
+                        float rowY = ROW_START_Y + (i + 8) * ROW_HEIGHT + offy - settingsScroll;
                         if (my >= rowY && my <= rowY + ROW_HEIGHT - 2.f)
                         {
                             float colorX = ROW_X + 480.f;
@@ -288,17 +377,37 @@ void Display::processEvents(Settings &settings, Controller &controller)
         if (const auto *mouseBtn = event->getIf<sf::Event::MouseButtonReleased>())
         {
             if (mouseBtn->button == sf::Mouse::Button::Left)
+            {
                 draggingElement.clear();
+                draggingDeadzone = false;
+                draggingGroupFrames = false;
+            }
         }
 
         if (const auto *mouseMove = event->getIf<sf::Event::MouseMoved>())
         {
+            float mx = static_cast<float>(mouseMove->position.x);
+            float my = static_cast<float>(mouseMove->position.y);
+
+            if (draggingDeadzone && viewMode == ViewMode::Settings)
+            {
+                float sliderX = ROW_X + 200.f;
+                float sliderW = 350.f;
+                float t = std::clamp((mx - sliderX) / sliderW, 0.f, 1.f);
+                settings.deadzone = static_cast<int>(t * 100.f);
+            }
+
+            if (draggingGroupFrames && viewMode == ViewMode::Settings)
+            {
+                float sliderX = ROW_X + 200.f;
+                float sliderW = 350.f;
+                float t = std::clamp((mx - sliderX) / sliderW, 0.f, 1.f);
+                settings.inputGroupFrames = static_cast<int>(t * 5.f + 0.5f);
+            }
+
             if (!draggingElement.empty() && viewMode == ViewMode::Layout)
             {
-                float mx = static_cast<float>(mouseMove->position.x);
-                float my = static_cast<float>(mouseMove->position.y);
                 float offy = navBarHeight();
-
                 settings.layout[draggingElement] = {
                     mx - dragOffset.x,
                     my - dragOffset.y - offy};

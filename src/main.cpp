@@ -11,6 +11,7 @@ int main()
     settings.load();
     settings.loadLayout();
     display.loadFont(settings.fontPath);
+    display.setFramerateLimit(settings.fpsLimit);
 
     while (display.isOpen())
     {
@@ -19,6 +20,8 @@ int main()
 
         if (!display.isOpen())
             break;
+
+        display.updateHistory(settings, controller);
 
         switch (display.getViewMode())
         {
@@ -32,6 +35,8 @@ int main()
             display.renderSettings(settings);
             break;
         }
+
+        display.renderHistory(settings);
     }
 
     settings.save();

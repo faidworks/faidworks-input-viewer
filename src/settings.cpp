@@ -66,6 +66,41 @@ void Settings::load()
             continue;
         }
 
+        if (button == "_fpsLimit")
+        {
+            try { fpsLimit = std::stoi(value); } catch (...) {}
+            continue;
+        }
+
+        if (button == "_deadzone")
+        {
+            try { deadzone = std::stoi(value); } catch (...) {}
+            continue;
+        }
+
+        if (button == "_inputGroupFrames")
+        {
+            try { inputGroupFrames = std::stoi(value); } catch (...) {}
+            continue;
+        }
+
+        if (button == "_trackFrames")
+        {
+            trackFrames = (value == "true");
+            continue;
+        }
+
+        if (button == "_historyKey")
+        {
+            auto colon = value.find(':');
+            if (colon != std::string::npos)
+            {
+                try { historyKey = std::stoi(value.substr(0, colon)); } catch (...) {}
+                historyKeyName = value.substr(colon + 1);
+            }
+            continue;
+        }
+
         if (button.rfind("_colorInactive_", 0) == 0)
         {
             std::string elem = button.substr(15);
@@ -138,6 +173,11 @@ void Settings::save()
     file << "_activeStyle=" << (activeStyle == ActiveStyle::Pressed ? "pressed" : "filled") << "\n";
     file << "_bgColor=" << bgColor << "\n";
     file << "_fontPath=" << fontPath << "\n";
+    file << "_fpsLimit=" << fpsLimit << "\n";
+    file << "_deadzone=" << deadzone << "\n";
+    file << "_inputGroupFrames=" << inputGroupFrames << "\n";
+    file << "_trackFrames=" << (trackFrames ? "true" : "false") << "\n";
+    file << "_historyKey=" << historyKey << ":" << historyKeyName << "\n";
 
     for (const auto &[elem, color] : elementInactiveColors)
         file << "_colorInactive_" << elem << "=" << color << "\n";

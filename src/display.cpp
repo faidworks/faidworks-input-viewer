@@ -92,6 +92,25 @@ void Display::scanSystemFonts()
     std::sort(availableFonts.begin() + 1, availableFonts.end());
 }
 
+void Display::toggleHistoryWindow()
+{
+    if (historyOpen)
+    {
+        historyWindow.close();
+        historyOpen = false;
+    }
+    else
+    {
+        historyWindow.create(sf::VideoMode({400u, 500u}), "Input History");
+        historyOpen = true;
+    }
+}
+
+void Display::setFramerateLimit(int limit)
+{
+    window.setFramerateLimit(limit > 0 ? static_cast<unsigned int>(limit) : 0);
+}
+
 void Display::loadFont(const std::string &path)
 {
     if (!font.openFromFile(path))
@@ -254,18 +273,25 @@ void Display::drawNavBar()
     bar.setOutlineThickness(1.f);
     window.draw(bar);
 
+    float tabW = 800.f / 4.f;
+
     struct Tab
     {
         const char *label;
         ViewMode mode;
+        bool isToggle;
     };
-    Tab tabs[] = {{"Main", ViewMode::Main}, {"Layout", ViewMode::Layout}, {"Settings", ViewMode::Settings}};
+    Tab tabs[] = {
+        {"Main", ViewMode::Main, false},
+        {"History", ViewMode::Main, true},
+        {"Layout", ViewMode::Layout, false},
+        {"Settings", ViewMode::Settings, false}
+    };
 
-    float tabW = 800.f / 3.f;
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 4; i++)
     {
         float x = i * tabW;
-        bool active = (viewMode == tabs[i].mode);
+        bool active = tabs[i].isToggle ? historyOpen : (viewMode == tabs[i].mode);
 
         if (active)
         {

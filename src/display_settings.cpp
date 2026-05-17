@@ -111,9 +111,186 @@ void Display::renderSettings(const Settings &settings)
         }
     }
 
+    // FPS limit
+    {
+        float rowY = baseY + 3.f * ROW_HEIGHT - settingsScroll;
+        if (rowY + ROW_HEIGHT >= baseY && rowY <= 600.f)
+        {
+            sf::RectangleShape row(sf::Vector2f(ROW_WIDTH, ROW_HEIGHT - 2.f));
+            row.setPosition(sf::Vector2f(ROW_X, rowY));
+            row.setFillColor(sf::Color(60, 50, 80));
+            row.setOutlineColor(sf::Color(100, 80, 140));
+            row.setOutlineThickness(1.f);
+            window.draw(row);
+
+            text.setCharacterSize(16u);
+            text.setFillColor(sf::Color(200, 180, 255));
+            text.setString("FPS Limit");
+            text.setPosition(sf::Vector2f(ROW_X + 10.f, rowY + 5.f));
+            window.draw(text);
+
+            std::string val = (settings.fpsLimit <= 0) ? "Unlimited" : std::to_string(settings.fpsLimit);
+            text.setFillColor(sf::Color(150, 255, 150));
+            text.setString(val + "  (click to cycle)");
+            text.setPosition(sf::Vector2f(ROW_X + 200.f, rowY + 5.f));
+            window.draw(text);
+        }
+    }
+
+    // Deadzone slider
+    {
+        float rowY = baseY + 4.f * ROW_HEIGHT - settingsScroll;
+        if (rowY + ROW_HEIGHT >= baseY && rowY <= 600.f)
+        {
+            sf::RectangleShape row(sf::Vector2f(ROW_WIDTH, ROW_HEIGHT - 2.f));
+            row.setPosition(sf::Vector2f(ROW_X, rowY));
+            row.setFillColor(sf::Color(60, 50, 80));
+            row.setOutlineColor(sf::Color(100, 80, 140));
+            row.setOutlineThickness(1.f);
+            window.draw(row);
+
+            text.setCharacterSize(16u);
+            text.setFillColor(sf::Color(200, 180, 255));
+            text.setString("Deadzone");
+            text.setPosition(sf::Vector2f(ROW_X + 10.f, rowY + 5.f));
+            window.draw(text);
+
+            float sliderX = ROW_X + 200.f;
+            float sliderW = 350.f;
+            float sliderY = rowY + ROW_HEIGHT / 2.f;
+
+            sf::RectangleShape track(sf::Vector2f(sliderW, 4.f));
+            track.setPosition(sf::Vector2f(sliderX, sliderY - 2.f));
+            track.setFillColor(sf::Color(80, 80, 100));
+            window.draw(track);
+
+            float t = settings.deadzone / 100.f;
+            sf::RectangleShape fill(sf::Vector2f(sliderW * t, 4.f));
+            fill.setPosition(sf::Vector2f(sliderX, sliderY - 2.f));
+            fill.setFillColor(sf::Color(100, 200, 100));
+            window.draw(fill);
+
+            sf::CircleShape knob(7.f);
+            knob.setOrigin({7.f, 7.f});
+            knob.setPosition({sliderX + sliderW * t, sliderY});
+            knob.setFillColor(sf::Color(150, 255, 150));
+            window.draw(knob);
+
+            text.setCharacterSize(14u);
+            text.setFillColor(sf::Color(150, 255, 150));
+            text.setString(std::to_string(settings.deadzone) + "%");
+            text.setPosition(sf::Vector2f(sliderX + sliderW + 15.f, rowY + 6.f));
+            window.draw(text);
+        }
+    }
+
+    // Input group frames slider
+    {
+        float rowY = baseY + 5.f * ROW_HEIGHT - settingsScroll;
+        if (rowY + ROW_HEIGHT >= baseY && rowY <= 600.f)
+        {
+            sf::RectangleShape row(sf::Vector2f(ROW_WIDTH, ROW_HEIGHT - 2.f));
+            row.setPosition(sf::Vector2f(ROW_X, rowY));
+            row.setFillColor(sf::Color(60, 50, 80));
+            row.setOutlineColor(sf::Color(100, 80, 140));
+            row.setOutlineThickness(1.f);
+            window.draw(row);
+
+            text.setCharacterSize(16u);
+            text.setFillColor(sf::Color(200, 180, 255));
+            text.setString("Input Group");
+            text.setPosition(sf::Vector2f(ROW_X + 10.f, rowY + 5.f));
+            window.draw(text);
+
+            float sliderX = ROW_X + 200.f;
+            float sliderW = 350.f;
+            float sliderY = rowY + ROW_HEIGHT / 2.f;
+
+            sf::RectangleShape track(sf::Vector2f(sliderW, 4.f));
+            track.setPosition(sf::Vector2f(sliderX, sliderY - 2.f));
+            track.setFillColor(sf::Color(80, 80, 100));
+            window.draw(track);
+
+            float t = settings.inputGroupFrames / 5.f;
+            sf::RectangleShape fill(sf::Vector2f(sliderW * t, 4.f));
+            fill.setPosition(sf::Vector2f(sliderX, sliderY - 2.f));
+            fill.setFillColor(sf::Color(100, 200, 100));
+            window.draw(fill);
+
+            sf::CircleShape knob(7.f);
+            knob.setOrigin({7.f, 7.f});
+            knob.setPosition({sliderX + sliderW * t, sliderY});
+            knob.setFillColor(sf::Color(150, 255, 150));
+            window.draw(knob);
+
+            text.setCharacterSize(14u);
+            text.setFillColor(sf::Color(150, 255, 150));
+            text.setString(std::to_string(settings.inputGroupFrames) + " frames");
+            text.setPosition(sf::Vector2f(sliderX + sliderW + 15.f, rowY + 6.f));
+            window.draw(text);
+        }
+    }
+
+    // History key binding
+    {
+        float rowY = baseY + 6.f * ROW_HEIGHT - settingsScroll;
+        if (rowY + ROW_HEIGHT >= baseY && rowY <= 600.f)
+        {
+            sf::RectangleShape row(sf::Vector2f(ROW_WIDTH, ROW_HEIGHT - 2.f));
+            row.setPosition(sf::Vector2f(ROW_X, rowY));
+            row.setFillColor(detectingHistoryKey ? sf::Color(80, 80, 140) : sf::Color(60, 50, 80));
+            row.setOutlineColor(sf::Color(100, 80, 140));
+            row.setOutlineThickness(1.f);
+            window.draw(row);
+
+            text.setCharacterSize(16u);
+            text.setFillColor(sf::Color(200, 180, 255));
+            text.setString("History Key");
+            text.setPosition(sf::Vector2f(ROW_X + 10.f, rowY + 5.f));
+            window.draw(text);
+
+            std::string val;
+            if (detectingHistoryKey)
+                val = ">> Press a key... <<";
+            else
+                val = settings.historyKeyName + "  (click to rebind)";
+
+            text.setFillColor(detectingHistoryKey ? sf::Color::Yellow : sf::Color(150, 255, 150));
+            text.setString(val);
+            text.setPosition(sf::Vector2f(ROW_X + 200.f, rowY + 5.f));
+            window.draw(text);
+        }
+    }
+
+    // Track Frames toggle
+    {
+        float rowY = baseY + 7.f * ROW_HEIGHT - settingsScroll;
+        if (rowY + ROW_HEIGHT >= baseY && rowY <= 600.f)
+        {
+            sf::RectangleShape row(sf::Vector2f(ROW_WIDTH, ROW_HEIGHT - 2.f));
+            row.setPosition(sf::Vector2f(ROW_X, rowY));
+            row.setFillColor(sf::Color(60, 50, 80));
+            row.setOutlineColor(sf::Color(100, 80, 140));
+            row.setOutlineThickness(1.f);
+            window.draw(row);
+
+            text.setCharacterSize(16u);
+            text.setFillColor(sf::Color(200, 180, 255));
+            text.setString("Track Frames");
+            text.setPosition(sf::Vector2f(ROW_X + 10.f, rowY + 5.f));
+            window.draw(text);
+
+            std::string val = settings.trackFrames ? "On" : "Off";
+            text.setFillColor(sf::Color(150, 255, 150));
+            text.setString(val + "  (click to toggle)");
+            text.setPosition(sf::Vector2f(ROW_X + 200.f, rowY + 5.f));
+            window.draw(text);
+        }
+    }
+
     for (int i = 0; i < (int)GAMEPAD_BUTTONS.size(); i++)
     {
-        float rowY = baseY + (i + 3) * ROW_HEIGHT - settingsScroll;
+        float rowY = baseY + (i + 8) * ROW_HEIGHT - settingsScroll;
         if (rowY + ROW_HEIGHT < baseY || rowY > 600.f)
             continue;
         bool isDetecting = (detectingIndex == i);

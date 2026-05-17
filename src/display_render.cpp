@@ -2,8 +2,10 @@
 #include "display.h"
 #include "display_constants.h"
 #include <cmath>
+#include <algorithm>
+#include <set>
 
-static bool isMappingActive(const InputMapping &mapping, const Controller &controller)
+static bool isMappingActive(const InputMapping &mapping, const Controller &controller, int deadzoneRaw = 16000)
 {
     switch (mapping.type)
     {
@@ -12,7 +14,7 @@ static bool isMappingActive(const InputMapping &mapping, const Controller &contr
     case InputType::GamepadButton:
         return controller.isButtonPressed(mapping.code);
     case InputType::GamepadAxis:
-        return std::abs(controller.getAxisValue(mapping.code)) > 16000;
+        return std::abs(controller.getAxisValue(mapping.code)) > deadzoneRaw;
     default:
         return false;
     }
@@ -61,11 +63,12 @@ void Display::render(const Settings &settings, const Controller &controller)
     float offy = navBarHeight();
 
 
+    int deadzoneRaw = settings.deadzone * 32768 / 100;
     auto isActive = [&](const std::string &btn) -> bool {
         auto it = settings.mappings.find(btn);
         if (it == settings.mappings.end() || it->second.type == InputType::None)
             return false;
-        return isMappingActive(it->second, controller);
+        return isMappingActive(it->second, controller, deadzoneRaw);
     };
 
     std::string inactiveSuffix = (settings.activeStyle == ActiveStyle::Filled) ? "-filled" : "-outline";
@@ -183,4 +186,345 @@ void Display::render(const Settings &settings, const Controller &controller)
     drawStick("RStick", "rstick", "RStick X", "RStick Y", "R3");
 
     window.display();
+}
+
+static std::string axisDirectionName(const std::string &btn, const Controller &controller, const InputMapping &mapping)
+{
+    int16_t val = controller.getAxisValue(mapping.code);
+    if (btn == "LStick X")
+        return val > 0 ? "LStick Right" : "LStick Left";
+    if (btn == "LStick Y")
+        return val > 0 ? "LStick Down" : "LStick Up";
+    if (btn == "RStick X")
+        return val > 0 ? "RStick Right" : "RStick Left";
+    if (btn == "RStick Y")
+        return val > 0 ? "RStick Down" : "RStick Up";
+    return btn;
+}
+
+void Display::updateHistory(const Settings &settings, const Controller &controller)
+{
+    int deadzoneRaw = settings.deadzone * 32768 / 100;
+
+    std::set<std::string> currentActive;
+    for (const auto &btn : GAMEPAD_BUTTONS)
+    {
+        auto it = settings.mappings.find(btn);
+        if (it == settings.mappings.end() || it->second.type == InputType::None)
+            continue;
+        if (isMappingActive(it->second, controller, deadzoneRaw))
+            currentActive.insert(btn);
+    }
+
+    std::vector<std::string> newlyPressed;
+    for (const auto &btn : currentActive)
+    {
+        if (prevActiveButtons.find(btn) == prevActiveButtons.end())
+        {
+            auto it = settings.mappings.find(btn);
+            if (it != settings.mappings.end() && it->second.type == InputType::GamepadAxis &&
+                (btn == "LStick X" || btn == "LStick Y" || btn == "RStick X" || btn == "RStick Y"))
+                newlyPressed.push_back(axisDirectionName(btn, controller, it->second));
+            else
+                newlyPressed.push_back(btn);
+        }
+    }
+
+    if (!newlyPressed.empty())
+    {
+        if (!inputHistory.empty() && framesSinceLastEntry <= settings.inputGroupFrames)
+        {
+            for (const auto &btn : newlyPressed)
+            {
+                auto &existing = inputHistory.front().buttons;
+                if (std::find(existing.begin(), existing.end(), btn) == existing.end())
+                    existing.push_back(btn);
+            }
+        }
+        else
+        {
+            HistoryEntry entry;
+            entry.buttons = newlyPressed;
+            entry.frameGap = framesSinceLastEntry;
+            inputHistory.push_front(entry);
+            if (inputHistory.size() > 10)
+                inputHistory.pop_back();
+        }
+        framesSinceLastEntry = 0;
+    }
+    else
+    {
+        framesSinceLastEntry++;
+    }
+
+    prevActiveButtons = currentActive;
+}
+
+static bool isDpadButton(const std::string &btn)
+{
+    return btn == "DPad Up" || btn == "DPad Down" || btn == "DPad Left" || btn == "DPad Right";
+}
+
+static bool isStickButton(const std::string &btn)
+{
+    return btn == "L3" || btn == "R3" ||
+           btn.rfind("LStick ", 0) == 0 || btn.rfind("RStick ", 0) == 0;
+}
+
+static std::string stickElement(const std::string &btn)
+{
+    if (btn == "L3" || btn.rfind("LStick ", 0) == 0)
+        return "LStick";
+    return "RStick";
+}
+
+struct HistoryIcon {
+    std::string textureKey;
+    std::string overlayKey;
+    std::string element;
+    std::string label;
+};
+
+void Display::renderHistory(const Settings &settings)
+{
+    if (!historyOpen || !historyWindow.isOpen())
+        return;
+
+    while (const std::optional event = historyWindow.pollEvent())
+    {
+        if (event->is<sf::Event::Closed>())
+        {
+            historyWindow.close();
+            historyOpen = false;
+            return;
+        }
+    }
+
+    historyWindow.clear(sf::Color(30, 30, 40));
+
+    sf::Text title(font, "Input History", 20u);
+    title.setFillColor(sf::Color::White);
+    title.setPosition({15.f, 8.f});
+    historyWindow.draw(title);
+
+    bool filled = (settings.activeStyle == ActiveStyle::Filled);
+    const float ICON_SCALE = 0.35f;
+    const float MAX_ROW_W = 370.f;
+    const float ROW_PAD = 25.f;
+    const float LINE_H = 40.f;
+    const float ENTRY_GAP = 5.f;
+
+    float rowY = 45.f;
+    for (size_t i = 0; i < inputHistory.size(); i++)
+    {
+        std::vector<HistoryIcon> icons;
+        std::set<std::string> sticksSeen;
+
+        for (const auto &btn : inputHistory[i].buttons)
+        {
+            if (isDpadButton(btn))
+            {
+                std::string gateKey = filled ? "dpad-gate-filled" : "dpad-gate";
+                std::string dirKey;
+                if (btn == "DPad Up") dirKey = "dpad-pressed-up";
+                else if (btn == "DPad Down") dirKey = "dpad-pressed-down";
+                else if (btn == "DPad Left") dirKey = "dpad-pressed-left";
+                else if (btn == "DPad Right") dirKey = "dpad-pressed-right";
+                icons.push_back({gateKey, dirKey, "DPad", ""});
+                continue;
+            }
+
+            if (isStickButton(btn))
+            {
+                std::string elem = stickElement(btn);
+                bool isL3R3 = (btn == "L3" || btn == "R3");
+
+                if (sticksSeen.insert(elem).second)
+                {
+                    std::string base = toLower(elem);
+                    std::string key;
+                    if (isL3R3)
+                        key = base + "-ribs" + (filled ? "-filled" : "");
+                    else
+                        key = base + (filled ? "-filled" : "");
+                    if (textures.find(key) == textures.end())
+                        key = base;
+                    icons.push_back({key, "", elem, btn});
+                }
+                else
+                {
+                    if (isL3R3)
+                    {
+                        for (auto &ic : icons)
+                        {
+                            if (ic.element == elem)
+                            {
+                                std::string base = toLower(elem);
+                                std::string ribsKey = base + "-ribs" + (filled ? "-filled" : "");
+                                if (textures.find(ribsKey) != textures.end())
+                                    ic.textureKey = ribsKey;
+                                if (!ic.label.empty())
+                                    ic.label += " + " + btn;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (auto &ic : icons)
+                        {
+                            if (ic.element == elem && !ic.label.empty())
+                            {
+                                ic.label += " + " + btn;
+                                break;
+                            }
+                        }
+                    }
+                }
+                continue;
+            }
+
+            std::string prefix = toLower(btn);
+            std::string key = prefix + "-pressed";
+            if (textures.find(key) == textures.end())
+                key = prefix + "-filled";
+            if (textures.find(key) == textures.end())
+                key = prefix + "-outline";
+            icons.push_back({key, "", btn, ""});
+        }
+
+        float totalH = LINE_H;
+        {
+            float x = 0.f;
+            for (const auto &ic : icons)
+            {
+                float w = 30.f;
+                auto texIt = textures.find(ic.textureKey);
+                if (texIt != textures.end())
+                    w = texIt->second.getSize().x * ICON_SCALE;
+                if (!ic.label.empty())
+                    w += 5.f + ic.label.size() * 7.f;
+                if (x + w > MAX_ROW_W - ROW_PAD * 2.f && x > 0.f)
+                {
+                    totalH += LINE_H;
+                    x = 0.f;
+                }
+                x += w + 8.f;
+            }
+        }
+
+        sf::RectangleShape rowBg(sf::Vector2f(MAX_ROW_W, totalH));
+        rowBg.setPosition({15.f, rowY});
+        rowBg.setFillColor(sf::Color(45, 45, 60));
+        rowBg.setOutlineColor(sf::Color(70, 70, 90));
+        rowBg.setOutlineThickness(0.5f);
+        historyWindow.draw(rowBg);
+
+        float iconX = ROW_PAD;
+        float lineY = rowY;
+
+        for (const auto &ic : icons)
+        {
+            auto texIt = textures.find(ic.textureKey);
+            float itemW = 30.f;
+            if (texIt != textures.end())
+                itemW = texIt->second.getSize().x * ICON_SCALE;
+            if (!ic.label.empty())
+                itemW += 5.f + ic.label.size() * 7.f;
+
+            if (iconX - ROW_PAD + itemW > MAX_ROW_W - ROW_PAD * 2.f && iconX > ROW_PAD)
+            {
+                lineY += LINE_H;
+                iconX = ROW_PAD;
+            }
+
+            if (texIt != textures.end())
+            {
+                sf::Color inactiveTint = parseHexColor(settings.getInactiveColor(ic.element));
+                sf::Color activeTint = parseHexColor(settings.getActiveColor(ic.element));
+                bool hasOverlay = !ic.overlayKey.empty();
+                sf::Color tint = hasOverlay ? inactiveTint : activeTint;
+
+                sf::Sprite sprite(texIt->second);
+                auto size = texIt->second.getSize();
+                sprite.setOrigin({size.x / 2.f, size.y / 2.f});
+                sprite.setScale({ICON_SCALE, ICON_SCALE});
+                float spriteX = iconX + (size.x * ICON_SCALE) / 2.f;
+                float spriteY = lineY + LINE_H / 2.f;
+                sprite.setPosition({spriteX, spriteY});
+
+                if (shaderLoaded && tint != sf::Color::White)
+                {
+                    sf::Glsl::Vec4 tintVec(tint.r / 255.f, tint.g / 255.f, tint.b / 255.f, tint.a / 255.f);
+                    tintShader.setUniform("tintColor", tintVec);
+                    tintShader.setUniform("texture", sf::Shader::CurrentTexture);
+                    historyWindow.draw(sprite, sf::RenderStates(&tintShader));
+                }
+                else
+                {
+                    historyWindow.draw(sprite);
+                }
+
+                if (hasOverlay)
+                {
+                    auto ovIt = textures.find(ic.overlayKey);
+                    if (ovIt != textures.end())
+                    {
+                        sf::Sprite ovSprite(ovIt->second);
+                        auto ovSize = ovIt->second.getSize();
+                        ovSprite.setOrigin({ovSize.x / 2.f, ovSize.y / 2.f});
+                        ovSprite.setScale({ICON_SCALE, ICON_SCALE});
+                        ovSprite.setPosition({spriteX, spriteY});
+
+                        if (shaderLoaded && activeTint != sf::Color::White)
+                        {
+                            sf::Glsl::Vec4 tintVec(activeTint.r / 255.f, activeTint.g / 255.f, activeTint.b / 255.f, activeTint.a / 255.f);
+                            tintShader.setUniform("tintColor", tintVec);
+                            tintShader.setUniform("texture", sf::Shader::CurrentTexture);
+                            historyWindow.draw(ovSprite, sf::RenderStates(&tintShader));
+                        }
+                        else
+                        {
+                            historyWindow.draw(ovSprite);
+                        }
+                    }
+                }
+
+                iconX += size.x * ICON_SCALE;
+
+                if (!ic.label.empty())
+                {
+                    iconX += 5.f;
+                    sf::Text lbl(font, ic.label, 11u);
+                    lbl.setFillColor(sf::Color(200, 200, 220));
+                    lbl.setPosition({iconX, lineY + LINE_H / 2.f - 7.f});
+                    historyWindow.draw(lbl);
+                    iconX += lbl.getLocalBounds().size.x;
+                }
+
+                iconX += 8.f;
+            }
+            else
+            {
+                sf::Text label(font, ic.label.empty() ? ic.element : ic.label, 14u);
+                label.setFillColor(sf::Color::White);
+                label.setPosition({iconX, lineY + LINE_H / 2.f - 9.f});
+                historyWindow.draw(label);
+                iconX += label.getLocalBounds().size.x + 10.f;
+            }
+        }
+
+        if (settings.trackFrames && i > 0 && inputHistory[i - 1].frameGap > 0)
+        {
+            sf::Text gap(font, std::to_string(inputHistory[i - 1].frameGap) + "f", 10u);
+            gap.setFillColor(sf::Color(120, 120, 140));
+            float gapW = gap.getLocalBounds().size.x;
+            gap.setPosition({15.f + MAX_ROW_W - gapW - 8.f, rowY + totalH - 16.f});
+            historyWindow.draw(gap);
+        }
+
+        rowY += totalH + ENTRY_GAP;
+    }
+
+    historyWindow.display();
 }

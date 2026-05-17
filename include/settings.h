@@ -55,6 +55,12 @@ public:
     ActiveStyle activeStyle = ActiveStyle::Filled;
     std::string bgColor = "000000";
     std::string fontPath = "resources/fonts/OpenDyslexic-Regular.otf";
+    int fpsLimit = 60;
+    int deadzone = 5;
+    int inputGroupFrames = 0;
+    int historyKey = 11; // sf::Keyboard::Scancode::H
+    std::string historyKeyName = "h";
+    bool trackFrames = false;
     std::map<std::string, ElementLayout> layout;
 
     std::map<std::string, std::string> elementInactiveColors;

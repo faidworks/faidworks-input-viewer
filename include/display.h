@@ -5,9 +5,16 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <deque>
+#include <set>
 #include <utility>
 #include "controller.h"
 #include "settings.h"
+
+struct HistoryEntry {
+    std::vector<std::string> buttons;
+    int frameGap = 0;
+};
 
 enum class ViewMode { Main, Layout, Settings };
 
@@ -23,6 +30,10 @@ public:
     bool isOpen() const;
     ViewMode getViewMode() const;
     void loadFont(const std::string &path);
+    void setFramerateLimit(int limit);
+    void updateHistory(const Settings &settings, const Controller &controller);
+    void renderHistory(const Settings &settings);
+    void toggleHistoryWindow();
 
 private:
     sf::RenderWindow window;
@@ -59,6 +70,17 @@ private:
     int editingColorIndex = -1;
     bool editingColorIsActive = false;
     std::string colorInput;
+
+    bool draggingDeadzone = false;
+    bool detectingHistoryKey = false;
+
+    bool draggingGroupFrames = false;
+
+    sf::RenderWindow historyWindow;
+    bool historyOpen = false;
+    std::deque<HistoryEntry> inputHistory;
+    std::set<std::string> prevActiveButtons;
+    int framesSinceLastEntry = 0;
 };
 
 sf::Color parseHexColor(const std::string &hex);

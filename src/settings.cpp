@@ -90,6 +90,12 @@ void Settings::load()
             continue;
         }
 
+        if (button == "_trackSticks")
+        {
+            trackSticks = (value == "true");
+            continue;
+        }
+
         if (button == "_historyKey")
         {
             auto colon = value.find(':');
@@ -177,6 +183,7 @@ void Settings::save()
     file << "_deadzone=" << deadzone << "\n";
     file << "_inputGroupFrames=" << inputGroupFrames << "\n";
     file << "_trackFrames=" << (trackFrames ? "true" : "false") << "\n";
+    file << "_trackSticks=" << (trackSticks ? "true" : "false") << "\n";
     file << "_historyKey=" << historyKey << ":" << historyKeyName << "\n";
 
     for (const auto &[elem, color] : elementInactiveColors)

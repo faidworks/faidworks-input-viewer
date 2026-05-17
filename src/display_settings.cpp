@@ -288,9 +288,35 @@ void Display::renderSettings(const Settings &settings)
         }
     }
 
+    // Track Sticks toggle
+    {
+        float rowY = baseY + 8.f * ROW_HEIGHT - settingsScroll;
+        if (rowY + ROW_HEIGHT >= baseY && rowY <= 600.f)
+        {
+            sf::RectangleShape row(sf::Vector2f(ROW_WIDTH, ROW_HEIGHT - 2.f));
+            row.setPosition(sf::Vector2f(ROW_X, rowY));
+            row.setFillColor(sf::Color(60, 50, 80));
+            row.setOutlineColor(sf::Color(100, 80, 140));
+            row.setOutlineThickness(1.f);
+            window.draw(row);
+
+            text.setCharacterSize(16u);
+            text.setFillColor(sf::Color(200, 180, 255));
+            text.setString("Track Sticks");
+            text.setPosition(sf::Vector2f(ROW_X + 10.f, rowY + 5.f));
+            window.draw(text);
+
+            std::string val = settings.trackSticks ? "On" : "Off";
+            text.setFillColor(sf::Color(150, 255, 150));
+            text.setString(val + "  (click to toggle)");
+            text.setPosition(sf::Vector2f(ROW_X + 200.f, rowY + 5.f));
+            window.draw(text);
+        }
+    }
+
     for (int i = 0; i < (int)GAMEPAD_BUTTONS.size(); i++)
     {
-        float rowY = baseY + (i + 8) * ROW_HEIGHT - settingsScroll;
+        float rowY = baseY + (i + 9) * ROW_HEIGHT - settingsScroll;
         if (rowY + ROW_HEIGHT < baseY || rowY > 600.f)
             continue;
         bool isDetecting = (detectingIndex == i);

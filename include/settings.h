@@ -61,6 +61,7 @@ public:
     int historyKey = 11; // sf::Keyboard::Scancode::H
     std::string historyKeyName = "h";
     bool trackFrames = false;
+    bool trackSticks = true;
     std::map<std::string, ElementLayout> layout;
 
     std::map<std::string, std::string> elementInactiveColors;

@@ -167,7 +167,7 @@ void Display::processEvents(Settings &settings, Controller &controller)
                 else
                 {
                     settingsScroll -= scroll->delta * 30.f;
-                    float maxScroll = std::max(0.f, ROW_START_Y + (float)(GAMEPAD_BUTTONS.size() + 8) * ROW_HEIGHT - 600.f + navBarHeight());
+                    float maxScroll = std::max(0.f, ROW_START_Y + (float)(GAMEPAD_BUTTONS.size() + 9) * ROW_HEIGHT - 600.f + navBarHeight());
                     settingsScroll = std::clamp(settingsScroll, 0.f, maxScroll);
                 }
             }
@@ -310,9 +310,16 @@ void Display::processEvents(Settings &settings, Controller &controller)
                         continue;
                     }
 
+                    float tsRowY = ROW_START_Y + 8 * ROW_HEIGHT + offy - settingsScroll;
+                    if (mx >= ROW_X && mx <= ROW_X + ROW_WIDTH && my >= tsRowY && my <= tsRowY + ROW_HEIGHT - 2.f)
+                    {
+                        settings.trackSticks = !settings.trackSticks;
+                        continue;
+                    }
+
                     for (int i = 0; i < (int)GAMEPAD_BUTTONS.size(); i++)
                     {
-                        float rowY = ROW_START_Y + (i + 8) * ROW_HEIGHT + offy - settingsScroll;
+                        float rowY = ROW_START_Y + (i + 9) * ROW_HEIGHT + offy - settingsScroll;
                         if (my >= rowY && my <= rowY + ROW_HEIGHT - 2.f)
                         {
                             float colorX = ROW_X + 480.f;

@@ -212,7 +212,14 @@ void Display::updateHistory(const Settings &settings, const Controller &controll
         auto it = settings.mappings.find(btn);
         if (it == settings.mappings.end() || it->second.type == InputType::None)
             continue;
-        if (isMappingActive(it->second, controller, deadzoneRaw))
+        if (!isMappingActive(it->second, controller, deadzoneRaw))
+            continue;
+        bool isStickAxis = (btn == "LStick X" || btn == "LStick Y" || btn == "RStick X" || btn == "RStick Y");
+        if (isStickAxis && !settings.trackSticks)
+            continue;
+        if (isStickAxis && it->second.type == InputType::GamepadAxis)
+            currentActive.insert(axisDirectionName(btn, controller, it->second));
+        else
             currentActive.insert(btn);
     }
 
@@ -220,14 +227,7 @@ void Display::updateHistory(const Settings &settings, const Controller &controll
     for (const auto &btn : currentActive)
     {
         if (prevActiveButtons.find(btn) == prevActiveButtons.end())
-        {
-            auto it = settings.mappings.find(btn);
-            if (it != settings.mappings.end() && it->second.type == InputType::GamepadAxis &&
-                (btn == "LStick X" || btn == "LStick Y" || btn == "RStick X" || btn == "RStick Y"))
-                newlyPressed.push_back(axisDirectionName(btn, controller, it->second));
-            else
-                newlyPressed.push_back(btn);
-        }
+            newlyPressed.push_back(btn);
     }
 
     if (!newlyPressed.empty())
@@ -300,7 +300,7 @@ void Display::renderHistory(const Settings &settings)
         }
     }
 
-    historyWindow.clear(sf::Color(30, 30, 40));
+    historyWindow.clear(parseHexColor(settings.bgColor));
 
     sf::Text title(font, "Input History", 20u);
     title.setFillColor(sf::Color::White);

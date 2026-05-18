@@ -4,9 +4,9 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <filesystem>
 
 enum class InputType { None, Key, GamepadButton, GamepadAxis };
-enum class ActiveStyle { Filled, Pressed };
 
 struct InputMapping {
     InputType type = InputType::None;
@@ -24,6 +24,12 @@ inline const std::vector<std::string> GAMEPAD_BUTTONS = {
 
 struct ElementLayout {
     float x, y;
+};
+
+struct PresetConfig {
+    std::string imageFolder;
+    std::string builtinActive = "filled";
+    std::map<std::string, std::string> imageOverrides;
 };
 
 inline const std::vector<std::string> LAYOUT_ELEMENTS = {
@@ -52,7 +58,6 @@ public:
     void saveLayout();
 
     std::map<std::string, InputMapping> mappings;
-    ActiveStyle activeStyle = ActiveStyle::Filled;
     std::string bgColor = "000000";
     std::string fontPath = "resources/fonts/OpenDyslexic-Regular.otf";
     int fpsLimit = 60;
@@ -66,6 +71,17 @@ public:
 
     std::map<std::string, std::string> elementInactiveColors;
     std::map<std::string, std::string> elementActiveColors;
+
+    std::string activePreset = "Default Filled";
+    PresetConfig presetConfig;
+
+    std::vector<std::string> listPresets() const;
+    void loadPreset(const std::string &name);
+    void savePreset(const std::string &name);
+    void deletePreset(const std::string &name);
+    void renamePreset(const std::string &oldName, const std::string &newName);
+    static std::filesystem::path presetsDir();
+    static std::filesystem::path presetDir(const std::string &name);
 
     std::string getInactiveColor(const std::string &element) const;
     std::string getActiveColor(const std::string &element) const;

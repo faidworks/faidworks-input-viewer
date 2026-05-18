@@ -56,6 +56,10 @@ void Display::render(const Settings &settings, const Controller &controller)
     drawNavBar();
     float offy = navBarHeight();
 
+    if (!controller.isConnected())
+    {
+        drawSpriteCentered("disconnected", 40.f, 40.f + offy, 0.5f);
+    }
 
     int deadzoneRaw = settings.deadzone * 32768 / 100;
     auto isActive = [&](const std::string &btn) -> bool {

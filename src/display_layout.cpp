@@ -35,22 +35,22 @@ void Display::renderLayout(Settings &settings)
 
         if (elem == "DPad")
         {
-            drawSpriteCentered("dpad-gate", cx, cy, WIDGET_SCALE);
+            drawSpriteCentered("dpad-gate-inactive", cx, cy, WIDGET_SCALE);
         }
         else if (elem == "LStick")
         {
-            drawSpriteCentered("lstick-gate", cx, cy, WIDGET_SCALE);
-            drawSpriteCentered("lstick", cx, cy, WIDGET_SCALE);
+            drawSpriteCentered("lstick-gate-inactive", cx, cy, WIDGET_SCALE);
+            drawSpriteCentered("lstick-inactive", cx, cy, WIDGET_SCALE);
         }
         else if (elem == "RStick")
         {
-            drawSpriteCentered("rstick-gate", cx, cy, WIDGET_SCALE);
-            drawSpriteCentered("rstick", cx, cy, WIDGET_SCALE);
+            drawSpriteCentered("rstick-gate-inactive", cx, cy, WIDGET_SCALE);
+            drawSpriteCentered("rstick-inactive", cx, cy, WIDGET_SCALE);
         }
         else
         {
             std::string prefix = toLower(elem);
-            std::string key = prefix + "-outline";
+            std::string key = prefix + "-inactive";
             if (textures.find(key) != textures.end())
             {
                 auto tit = textures.find(key);

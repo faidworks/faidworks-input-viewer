@@ -203,6 +203,9 @@ static const TextureEntry TEXTURE_TABLE[] = {
     {"rstick-active",         nullptr, "resources/buttons/filled/active/c-stick.png",        "resources/buttons/pressed/active/c-stick.png", "c-stick.png", true},
     {"rstick-ribs-inactive",  "resources/buttons/filled/inactive/c-stick-ribs.png",  nullptr, nullptr, "c-stick-ribs.png", false},
     {"rstick-ribs-active",    nullptr, "resources/buttons/filled/active/c-stick-ribs.png",   "resources/buttons/pressed/active/c-stick-ribs.png", "c-stick-ribs.png", true},
+
+    // Misc
+    {"disconnected",          "resources/buttons/misc/disconnected.png",             nullptr, nullptr, "disconnected.png", false},
 };
 
 void Display::loadTextures(const Settings &settings)

@@ -22,6 +22,54 @@ void Display::processEvents(Settings &settings, Controller &controller)
 
         if (const auto *keyPressed = event->getIf<sf::Event::KeyPressed>())
         {
+            if (presetPickerOpen && viewMode == ViewMode::Settings)
+            {
+                if (keyPressed->scancode == sf::Keyboard::Scancode::Escape)
+                {
+                    if (creatingPreset)
+                        creatingPreset = false;
+                    else if (editingImageFolder)
+                        editingImageFolder = false;
+                    else
+                        presetPickerOpen = false;
+                    continue;
+                }
+                if (creatingPreset)
+                {
+                    if (keyPressed->scancode == sf::Keyboard::Scancode::Enter && !newPresetName.empty())
+                    {
+                        settings.savePreset(settings.activePreset);
+                        settings.savePreset(newPresetName);
+                        settings.loadPreset(newPresetName);
+                        reloadTextures(settings);
+                        presetList = settings.listPresets();
+                        creatingPreset = false;
+                        newPresetName.clear();
+                    }
+                    if (keyPressed->scancode == sf::Keyboard::Scancode::Backspace && !newPresetName.empty())
+                        newPresetName.pop_back();
+                    continue;
+                }
+                if (editingImageFolder)
+                {
+                    if (keyPressed->scancode == sf::Keyboard::Scancode::Enter)
+                    {
+                        namespace fs = std::filesystem;
+                        if (imageFolderInput.empty() || fs::is_directory(imageFolderInput))
+                        {
+                            settings.presetConfig.imageFolder = imageFolderInput;
+                            settings.savePreset(settings.activePreset);
+                            reloadTextures(settings);
+                        }
+                        editingImageFolder = false;
+                    }
+                    if (keyPressed->scancode == sf::Keyboard::Scancode::Backspace && !imageFolderInput.empty())
+                        imageFolderInput.pop_back();
+                    continue;
+                }
+                continue;
+            }
+
             if (fontPickerOpen && viewMode == ViewMode::Settings)
             {
                 if (keyPressed->scancode == sf::Keyboard::Scancode::Escape)
@@ -131,6 +179,20 @@ void Display::processEvents(Settings &settings, Controller &controller)
 
         if (const auto *textEvent = event->getIf<sf::Event::TextEntered>())
         {
+            if (presetPickerOpen && creatingPreset && viewMode == ViewMode::Settings)
+            {
+                char c = static_cast<char>(textEvent->unicode);
+                if (newPresetName.size() < 64 && c >= 32 && c < 127 && c != '/' && c != '\\' && c != ':')
+                    newPresetName += c;
+                continue;
+            }
+            if (presetPickerOpen && editingImageFolder && viewMode == ViewMode::Settings)
+            {
+                char c = static_cast<char>(textEvent->unicode);
+                if (c >= 32 && c < 127)
+                    imageFolderInput += c;
+                continue;
+            }
             if (editingColorIndex >= 0 && viewMode == ViewMode::Settings)
             {
                 char c = static_cast<char>(textEvent->unicode);
@@ -157,7 +219,14 @@ void Display::processEvents(Settings &settings, Controller &controller)
         {
             if (viewMode == ViewMode::Settings)
             {
-                if (fontPickerOpen)
+                if (presetPickerOpen)
+                {
+                    presetPickerScroll -= scroll->delta * 30.f;
+                    float listH = PICKER_H - PICKER_TITLE_H - 50.f;
+                    float maxScroll = std::max(0.f, (float)presetList.size() * 48.f - listH);
+                    presetPickerScroll = std::clamp(presetPickerScroll, 0.f, maxScroll);
+                }
+                else if (fontPickerOpen)
                 {
                     fontPickerScroll -= scroll->delta * 30.f;
                     float listH = PICKER_H - PICKER_TITLE_H;
@@ -202,12 +271,81 @@ void Display::processEvents(Settings &settings, Controller &controller)
                 {
                     float offy = navBarHeight();
 
-                    float toggleY = ROW_START_Y + offy - settingsScroll;
-                    if (mx >= ROW_X && mx <= ROW_X + ROW_WIDTH && my >= toggleY && my <= toggleY + ROW_HEIGHT - 2.f)
+                    if (presetPickerOpen)
                     {
-                        settings.activeStyle = (settings.activeStyle == ActiveStyle::Filled)
-                                                   ? ActiveStyle::Pressed
-                                                   : ActiveStyle::Filled;
+                        const float PX = 100.f, PY = 50.f, PW = 600.f, PH = 470.f;
+                        const float TITLE_H = 40.f, PROW_H = 48.f;
+                        float listY = PY + TITLE_H;
+                        float footerY = PY + PH - 45.f;
+
+                        if (mx >= PX + 15.f && mx <= PX + 200.f &&
+                            my >= footerY + 8.f && my <= footerY + 38.f && !creatingPreset)
+                        {
+                            creatingPreset = true;
+                            newPresetName.clear();
+                            continue;
+                        }
+
+                        if (mx >= PX && mx <= PX + PW &&
+                            my >= listY && my <= footerY)
+                        {
+                            int clicked = (int)((my - listY + presetPickerScroll) / PROW_H);
+                            if (clicked >= 0 && clicked < (int)presetList.size())
+                            {
+                                float delX = PX + PW - 30.f;
+                                if (mx >= delX && presetList[clicked] != "Default")
+                                {
+                                    if (confirmDeleteIndex == clicked)
+                                    {
+                                        bool wasActive = (presetList[clicked] == settings.activePreset);
+                                        settings.deletePreset(presetList[clicked]);
+                                        if (wasActive)
+                                        {
+                                            settings.loadPreset("Default");
+                                            reloadTextures(settings);
+                                        }
+                                        presetList = settings.listPresets();
+                                        confirmDeleteIndex = -1;
+                                    }
+                                    else
+                                    {
+                                        confirmDeleteIndex = clicked;
+                                    }
+                                }
+                                else if (presetList[clicked] == settings.activePreset)
+                                {
+                                    editingImageFolder = true;
+                                    imageFolderInput = settings.presetConfig.imageFolder;
+                                    confirmDeleteIndex = -1;
+                                }
+                                else
+                                {
+                                    settings.savePreset(settings.activePreset);
+                                    settings.loadPreset(presetList[clicked]);
+                                    reloadTextures(settings);
+                                    confirmDeleteIndex = -1;
+                                }
+                            }
+                        }
+                        else if (mx < PX || mx > PX + PW || my < PY || my > PY + PH)
+                        {
+                            presetPickerOpen = false;
+                            creatingPreset = false;
+                            editingImageFolder = false;
+                            confirmDeleteIndex = -1;
+                        }
+                        continue;
+                    }
+
+                    float presetRowY = ROW_START_Y + offy - settingsScroll;
+                    if (mx >= ROW_X && mx <= ROW_X + ROW_WIDTH && my >= presetRowY && my <= presetRowY + ROW_HEIGHT - 2.f)
+                    {
+                        presetPickerOpen = true;
+                        presetPickerScroll = 0.f;
+                        presetList = settings.listPresets();
+                        creatingPreset = false;
+                        editingImageFolder = false;
+                        confirmDeleteIndex = -1;
                         continue;
                     }
 

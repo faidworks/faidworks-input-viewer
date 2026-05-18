@@ -1,4 +1,5 @@
 #include "settings.h"
+#include <algorithm>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -32,6 +33,153 @@ static fs::path configPath(const std::string &filename)
     return configDir() / filename;
 }
 
+fs::path Settings::presetsDir()
+{
+    fs::path dir = configDir() / "presets";
+    fs::create_directories(dir);
+    return dir;
+}
+
+fs::path Settings::presetDir(const std::string &name)
+{
+    fs::path dir = presetsDir() / name;
+    fs::create_directories(dir);
+    return dir;
+}
+
+std::vector<std::string> Settings::listPresets() const
+{
+    std::vector<std::string> result;
+    result.push_back("Default");
+
+    try
+    {
+        for (const auto &entry : fs::directory_iterator(presetsDir()))
+        {
+            if (!entry.is_directory())
+                continue;
+            std::string name = entry.path().filename().string();
+            if (name != "Default")
+                result.push_back(name);
+        }
+    }
+    catch (...) {}
+
+    std::sort(result.begin() + 1, result.end());
+    return result;
+}
+
+static void migrateOldDefault()
+{
+    fs::path oldDefault = Settings::presetsDir() / "Default";
+    if (fs::exists(oldDefault) && fs::is_directory(oldDefault))
+    {
+        fs::path newDefault = Settings::presetsDir() / "Default Filled";
+        if (!fs::exists(newDefault))
+        {
+            try { fs::rename(oldDefault, newDefault); } catch (...) {}
+        }
+    }
+}
+
+static void createDefaultPreset(const std::string &name, const std::string &builtinActive)
+{
+    fs::path dir = Settings::presetDir(name);
+    fs::path presetFile = dir / "preset.txt";
+    if (fs::exists(presetFile))
+        return;
+
+    fs::path rootLayout = configDir() / "layout.txt";
+    fs::path presetLayout = dir / "layout.txt";
+    if (fs::exists(rootLayout) && !fs::exists(presetLayout))
+    {
+        try { fs::copy_file(rootLayout, presetLayout); } catch (...) {}
+    }
+
+    std::ofstream pf(presetFile);
+    if (pf.is_open())
+    {
+        pf << "_imageFolder=\n";
+        pf << "_builtinActive=" << builtinActive << "\n";
+    }
+}
+
+void Settings::loadPreset(const std::string &name)
+{
+    activePreset = name;
+    presetConfig = PresetConfig{};
+
+    migrateOldDefault();
+    createDefaultPreset("Default Filled", "filled");
+    createDefaultPreset("Default Pressed", "pressed");
+
+    fs::path dir = presetDir(name);
+    fs::path presetFile = dir / "preset.txt";
+
+    {
+        std::ifstream file(presetFile);
+        if (file.is_open())
+        {
+            std::string line;
+            while (std::getline(file, line))
+            {
+                auto eq = line.find('=');
+                if (eq == std::string::npos)
+                    continue;
+                std::string key = line.substr(0, eq);
+                std::string val = line.substr(eq + 1);
+
+                if (key == "_imageFolder")
+                    presetConfig.imageFolder = val;
+                else if (key == "_builtinActive")
+                    presetConfig.builtinActive = val;
+                else if (key.rfind("_override_", 0) == 0)
+                    presetConfig.imageOverrides[key.substr(10)] = val;
+            }
+        }
+    }
+
+    loadLayout();
+}
+
+void Settings::savePreset(const std::string &name)
+{
+    fs::path dir = presetDir(name);
+
+    {
+        std::ofstream file(dir / "preset.txt");
+        if (file.is_open())
+        {
+            file << "_imageFolder=" << presetConfig.imageFolder << "\n";
+            file << "_builtinActive=" << presetConfig.builtinActive << "\n";
+            for (const auto &[key, path] : presetConfig.imageOverrides)
+                file << "_override_" << key << "=" << path << "\n";
+        }
+    }
+
+    saveLayout();
+}
+
+void Settings::deletePreset(const std::string &name)
+{
+    if (name == "Default")
+        return;
+    try { fs::remove_all(presetsDir() / name); } catch (...) {}
+}
+
+void Settings::renamePreset(const std::string &oldName, const std::string &newName)
+{
+    if (oldName == "Default" || newName.empty())
+        return;
+    try
+    {
+        fs::rename(presetsDir() / oldName, presetsDir() / newName);
+        if (activePreset == oldName)
+            activePreset = newName;
+    }
+    catch (...) {}
+}
+
 void Settings::load()
 {
     std::ifstream file(configPath("settings.txt"));
@@ -48,9 +196,18 @@ void Settings::load()
         std::string button = line.substr(0, eq);
         std::string value = line.substr(eq + 1);
 
+        if (button == "_activePreset")
+        {
+            activePreset = value;
+            continue;
+        }
+
         if (button == "_activeStyle")
         {
-            activeStyle = (value == "pressed") ? ActiveStyle::Pressed : ActiveStyle::Filled;
+            if (value == "pressed" && activePreset == "Default")
+                activePreset = "Default Pressed";
+            else if (activePreset == "Default")
+                activePreset = "Default Filled";
             continue;
         }
 
@@ -176,7 +333,7 @@ void Settings::save()
     if (!file.is_open())
         return;
 
-    file << "_activeStyle=" << (activeStyle == ActiveStyle::Pressed ? "pressed" : "filled") << "\n";
+    file << "_activePreset=" << activePreset << "\n";
     file << "_bgColor=" << bgColor << "\n";
     file << "_fontPath=" << fontPath << "\n";
     file << "_fpsLimit=" << fpsLimit << "\n";
@@ -236,7 +393,10 @@ void Settings::loadLayout()
 {
     layout = DEFAULT_LAYOUT;
 
-    std::ifstream file(configPath("layout.txt"));
+    fs::path layoutPath = presetDir(activePreset) / "layout.txt";
+    if (!fs::exists(layoutPath))
+        layoutPath = configPath("layout.txt");
+    std::ifstream file(layoutPath);
     if (!file.is_open())
         return;
 
@@ -273,7 +433,7 @@ void Settings::loadLayout()
 
 void Settings::saveLayout()
 {
-    std::ofstream file(configPath("layout.txt"));
+    std::ofstream file(presetDir(activePreset) / "layout.txt");
     if (!file.is_open())
         return;
 

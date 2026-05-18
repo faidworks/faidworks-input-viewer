@@ -159,7 +159,6 @@ TEST_F(MappingsTest, NoneMappingsNotSaved)
 TEST_F(MappingsTest, MappingsAndMetadataCoexist)
 {
     writeSettingsFile(
-        "_activeStyle=pressed\n"
         "_bgColor=112233\n"
         "_fontPath=/some/font.ttf\n"
         "A=button:0:Cross\n"
@@ -168,7 +167,6 @@ TEST_F(MappingsTest, MappingsAndMetadataCoexist)
     Settings settings;
     settings.load();
 
-    EXPECT_EQ(settings.activeStyle, ActiveStyle::Pressed);
     EXPECT_EQ(settings.bgColor, "112233");
     EXPECT_EQ(settings.fontPath, "/some/font.ttf");
     ASSERT_TRUE(settings.mappings.count("A"));

@@ -18,7 +18,7 @@ void Display::renderSettings(const Settings &settings)
 
     float baseY = ROW_START_Y + offy;
 
-    // Active style toggle
+    // Preset selection
     {
         float rowY = baseY - settingsScroll;
         if (rowY + ROW_HEIGHT >= baseY && rowY <= 600.f)
@@ -32,13 +32,12 @@ void Display::renderSettings(const Settings &settings)
 
             text.setCharacterSize(16u);
             text.setFillColor(sf::Color(200, 180, 255));
-            text.setString("Active Style");
+            text.setString("Preset");
             text.setPosition(sf::Vector2f(ROW_X + 10.f, rowY + 5.f));
             window.draw(text);
 
-            std::string val = (settings.activeStyle == ActiveStyle::Pressed) ? "Pressed" : "Filled";
-            text.setString(val + "  (click to toggle)");
             text.setFillColor(sf::Color(150, 255, 150));
+            text.setString(settings.activePreset + "  (click to change)");
             text.setPosition(sf::Vector2f(ROW_X + 200.f, rowY + 5.f));
             window.draw(text);
         }
@@ -421,6 +420,120 @@ void Display::renderSettings(const Settings &settings)
             text.setFillColor(editing ? sf::Color::Yellow : sf::Color(160, 160, 180));
             text.setString(editing ? hexVal + "_" : hexVal);
             text.setPosition(sf::Vector2f(activeX + 18.f, rowY + 8.f));
+            window.draw(text);
+        }
+    }
+
+    if (presetPickerOpen)
+    {
+        sf::RectangleShape overlay(sf::Vector2f(800.f, 600.f));
+        overlay.setFillColor(sf::Color(0, 0, 0, 150));
+        window.draw(overlay);
+
+        const float PX = 100.f, PY = 50.f, PW = 600.f, PH = 470.f;
+        const float TITLE_H = 40.f, PROW_H = 48.f;
+        float listY = PY + TITLE_H;
+        float listH = PH - TITLE_H - 50.f;
+
+        sf::RectangleShape dialog(sf::Vector2f(PW, PH));
+        dialog.setPosition({PX, PY});
+        dialog.setFillColor(sf::Color(35, 35, 50));
+        dialog.setOutlineColor(sf::Color(100, 80, 140));
+        dialog.setOutlineThickness(2.f);
+        window.draw(dialog);
+
+        text.setCharacterSize(18u);
+        text.setFillColor(sf::Color::White);
+        text.setString("Presets");
+        text.setPosition({PX + 15.f, PY + 8.f});
+        window.draw(text);
+
+        sf::RectangleShape sep(sf::Vector2f(PW - 4.f, 1.f));
+        sep.setPosition({PX + 2.f, listY});
+        sep.setFillColor(sf::Color(100, 80, 140));
+        window.draw(sep);
+
+        int firstVis = std::max(0, (int)(presetPickerScroll / PROW_H));
+        int lastVis = std::min((int)presetList.size() - 1, firstVis + (int)(listH / PROW_H) + 1);
+
+        for (int i = firstVis; i <= lastVis; i++)
+        {
+            float rowY = listY + i * PROW_H - presetPickerScroll;
+            if (rowY + PROW_H < listY || rowY > PY + PH - 50.f)
+                continue;
+
+            bool active = (presetList[i] == settings.activePreset);
+            bool pendingDelete = (confirmDeleteIndex == i);
+
+            sf::RectangleShape row(sf::Vector2f(PW - 4.f, PROW_H - 2.f));
+            row.setPosition({PX + 2.f, rowY});
+            row.setFillColor(active ? sf::Color(80, 60, 120) : sf::Color(45, 45, 60));
+            row.setOutlineColor(sf::Color(70, 70, 90));
+            row.setOutlineThickness(0.5f);
+            window.draw(row);
+
+            text.setCharacterSize(16u);
+            text.setFillColor(active ? sf::Color(200, 255, 200) : sf::Color(200, 200, 220));
+            text.setString(presetList[i]);
+            text.setPosition({PX + 15.f, rowY + 4.f});
+            window.draw(text);
+
+            if (active)
+            {
+                text.setCharacterSize(11u);
+                text.setFillColor(sf::Color(140, 140, 160));
+                std::string folderDisplay = settings.presetConfig.imageFolder.empty()
+                    ? "(built-in images)"
+                    : "Images: " + settings.presetConfig.imageFolder;
+                if (editingImageFolder)
+                    folderDisplay = "Images: " + imageFolderInput + "_";
+                text.setString(folderDisplay);
+                text.setPosition({PX + 15.f, rowY + 24.f});
+                window.draw(text);
+            }
+
+            if (presetList[i] != "Default")
+            {
+                float delX = PX + PW - 30.f;
+                text.setCharacterSize(14u);
+                text.setFillColor(pendingDelete ? sf::Color::Red : sf::Color(120, 120, 140));
+                text.setString("X");
+                text.setPosition({delX, rowY + 4.f});
+                window.draw(text);
+            }
+        }
+
+        float footerY = PY + PH - 45.f;
+        sf::RectangleShape footerSep(sf::Vector2f(PW - 4.f, 1.f));
+        footerSep.setPosition({PX + 2.f, footerY});
+        footerSep.setFillColor(sf::Color(100, 80, 140));
+        window.draw(footerSep);
+
+        if (creatingPreset)
+        {
+            text.setCharacterSize(16u);
+            text.setFillColor(sf::Color::Yellow);
+            text.setString("Name: " + newPresetName + "_");
+            text.setPosition({PX + 15.f, footerY + 12.f});
+            window.draw(text);
+        }
+        else
+        {
+            text.setCharacterSize(14u);
+            text.setString("+ New Preset");
+            auto btnBounds = text.getLocalBounds();
+            float btnW = btnBounds.size.x + 24.f;
+            float btnH = 30.f;
+
+            sf::RectangleShape newBtn(sf::Vector2f(btnW, btnH));
+            newBtn.setPosition({PX + 15.f, footerY + 8.f});
+            newBtn.setFillColor(sf::Color(60, 80, 60));
+            newBtn.setOutlineColor(sf::Color(100, 140, 100));
+            newBtn.setOutlineThickness(1.f);
+            window.draw(newBtn);
+
+            text.setFillColor(sf::Color(150, 255, 150));
+            text.setPosition({PX + 15.f + 12.f, footerY + 8.f + (btnH - btnBounds.size.y) / 2.f - 2.f});
             window.draw(text);
         }
     }

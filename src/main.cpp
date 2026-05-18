@@ -9,8 +9,9 @@ int main()
     Controller controller;
 
     settings.load();
-    settings.loadLayout();
+    settings.loadPreset(settings.activePreset);
     display.loadFont(settings.fontPath);
+    display.reloadTextures(settings);
     display.setFramerateLimit(settings.fpsLimit);
 
     while (display.isOpen())
@@ -40,6 +41,6 @@ int main()
     }
 
     settings.save();
-    settings.saveLayout();
+    settings.savePreset(settings.activePreset);
     return 0;
 }

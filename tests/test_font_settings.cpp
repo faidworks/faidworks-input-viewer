@@ -85,14 +85,12 @@ TEST_F(FontSettingsTest, SavePreservesOtherSettings)
     Settings settings;
     settings.fontPath = "/some/font.ttf";
     settings.bgColor = "AABBCC";
-    settings.activeStyle = ActiveStyle::Pressed;
     settings.save();
 
     Settings loaded;
     loaded.load();
     EXPECT_EQ(loaded.fontPath, "/some/font.ttf");
     EXPECT_EQ(loaded.bgColor, "AABBCC");
-    EXPECT_EQ(loaded.activeStyle, ActiveStyle::Pressed);
 }
 
 TEST_F(FontSettingsTest, FontPathWithSpaces)
@@ -271,7 +269,6 @@ TEST_F(FontSettingsTest, SavePreservesAllSettings)
     settings.historyKeyName = "Tab";
     settings.fontPath = "/test/font.otf";
     settings.bgColor = "112233";
-    settings.activeStyle = ActiveStyle::Pressed;
     settings.save();
 
     Settings loaded;
@@ -283,5 +280,4 @@ TEST_F(FontSettingsTest, SavePreservesAllSettings)
     EXPECT_EQ(loaded.historyKeyName, "Tab");
     EXPECT_EQ(loaded.fontPath, "/test/font.otf");
     EXPECT_EQ(loaded.bgColor, "112233");
-    EXPECT_EQ(loaded.activeStyle, ActiveStyle::Pressed);
 }

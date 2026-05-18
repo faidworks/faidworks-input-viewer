@@ -23,20 +23,14 @@ static bool isMappingActive(const InputMapping &mapping, const Controller &contr
 static void drawButtonImage(Display &d, const std::map<std::string, sf::Texture> &textures,
                             sf::RenderWindow &window, sf::Text &text,
                             const std::string &btn, float cx, float cy,
-                            bool active, const std::string &inactiveSuffix,
-                            sf::Color tint)
+                            bool active, sf::Color tint)
 {
     std::string prefix = toLower(btn);
+    std::string key = prefix + (active ? "-active" : "-inactive");
 
-    std::string key = prefix + (active ? "-pressed" : inactiveSuffix);
-    if (textures.find(key) == textures.end())
-        key = prefix + "-filled";
-    if (textures.find(key) == textures.end())
-        key = prefix + "-outline";
-
-    if (textures.find(key) != textures.end())
+    auto it = textures.find(key);
+    if (it != textures.end())
     {
-        auto it = textures.find(key);
         sf::Sprite sprite(it->second);
         auto size = it->second.getSize();
         sprite.setOrigin({size.x / 2.f, size.y / 2.f});
@@ -71,8 +65,6 @@ void Display::render(const Settings &settings, const Controller &controller)
         return isMappingActive(it->second, controller, deadzoneRaw);
     };
 
-    std::string inactiveSuffix = (settings.activeStyle == ActiveStyle::Filled) ? "-filled" : "-outline";
-
     static const std::vector<std::string> gridButtons = {
         "A", "B", "X", "Y", "Start",
         "LB", "RB", "Select"};
@@ -87,10 +79,8 @@ void Display::render(const Settings &settings, const Controller &controller)
         bool active = isActive(btn);
         std::string elem = elementForButton(btn);
         sf::Color tint = parseHexColor(active ? settings.getActiveColor(elem) : settings.getInactiveColor(elem));
-        drawButtonImage(*this, textures, window, text, btn, cx, cy, active, inactiveSuffix, tint);
+        drawButtonImage(*this, textures, window, text, btn, cx, cy, active, tint);
     }
-
-    bool filled = (settings.activeStyle == ActiveStyle::Filled);
 
     // Triggers (analog fill)
     auto drawTrigger = [&](const std::string &btn, bool fromLeft) {
@@ -103,7 +93,7 @@ void Display::render(const Settings &settings, const Controller &controller)
         std::string prefix = toLower(btn);
         sf::Color inactiveTint = parseHexColor(settings.getInactiveColor(btn));
         sf::Color activeTint = parseHexColor(settings.getActiveColor(btn));
-        drawSpriteTinted(prefix + (filled ? "-filled" : "-outline"), cx, cy - 8.f, BTN_SCALE, inactiveTint);
+        drawSpriteTinted(prefix + "-inactive", cx, cy - 8.f, BTN_SCALE, inactiveTint);
 
         float fill = 0.f;
         auto mapIt = settings.mappings.find(btn);
@@ -111,7 +101,7 @@ void Display::render(const Settings &settings, const Controller &controller)
             fill = controller.getAxisValue(mapIt->second.code) / 32768.f;
 
         if (fill > 0.f)
-            drawSpritePartialFill(prefix + "-pressed", cx, cy - 8.f, BTN_SCALE, fill, fromLeft, activeTint);
+            drawSpritePartialFill(prefix + "-active", cx, cy - 8.f, BTN_SCALE, fill, fromLeft, activeTint);
     };
     drawTrigger("LT", false);
     drawTrigger("RT", true);
@@ -126,15 +116,15 @@ void Display::render(const Settings &settings, const Controller &controller)
 
             sf::Color dpadInactive = parseHexColor(settings.getInactiveColor("DPad"));
             sf::Color dpadActive = parseHexColor(settings.getActiveColor("DPad"));
-            drawSpriteTinted(filled ? "dpad-gate-filled" : "dpad-gate", cx, cy, WIDGET_SCALE, dpadInactive);
+            drawSpriteTinted("dpad-gate-inactive", cx, cy, WIDGET_SCALE, dpadInactive);
             if (isActive("DPad Up"))
-                drawSpriteTinted("dpad-pressed-up", cx, cy, WIDGET_SCALE, dpadActive);
+                drawSpriteTinted("dpad-active-up", cx, cy, WIDGET_SCALE, dpadActive);
             if (isActive("DPad Down"))
-                drawSpriteTinted("dpad-pressed-down", cx, cy, WIDGET_SCALE, dpadActive);
+                drawSpriteTinted("dpad-active-down", cx, cy, WIDGET_SCALE, dpadActive);
             if (isActive("DPad Left"))
-                drawSpriteTinted("dpad-pressed-left", cx, cy, WIDGET_SCALE, dpadActive);
+                drawSpriteTinted("dpad-active-left", cx, cy, WIDGET_SCALE, dpadActive);
             if (isActive("DPad Right"))
-                drawSpriteTinted("dpad-pressed-right", cx, cy, WIDGET_SCALE, dpadActive);
+                drawSpriteTinted("dpad-active-right", cx, cy, WIDGET_SCALE, dpadActive);
         }
     }
 
@@ -161,8 +151,7 @@ void Display::render(const Settings &settings, const Controller &controller)
         if (itY != settings.mappings.end() && itY->second.type == InputType::GamepadAxis)
             dy = controller.getAxisValue(itY->second.code) / 32768.f;
 
-        std::string gateKey = baseKey + "-gate" + (filled ? "-filled" : "");
-        drawSpriteTinted(gateKey, cx, cy, WIDGET_SCALE, stickInactive);
+        drawSpriteTinted(baseKey + "-gate-inactive", cx, cy, WIDGET_SCALE, stickInactive);
 
         float maxDisp = 20.f * WIDGET_SCALE;
         float stickX = cx + dx * maxDisp;
@@ -171,12 +160,12 @@ void Display::render(const Settings &settings, const Controller &controller)
         bool l3Active = isActive(l3Btn);
         std::string sKey;
         if (l3Active)
-            sKey = baseKey + "-ribs" + (filled ? "-filled" : "");
+            sKey = baseKey + "-ribs-active";
         else
-            sKey = baseKey + (filled ? "-filled" : "");
+            sKey = baseKey + "-inactive";
 
         if (!textures.count(sKey))
-            sKey = baseKey;
+            sKey = baseKey + "-inactive";
 
         bool stickMoved = (std::abs(dx) > 0.1f || std::abs(dy) > 0.1f || l3Active);
         drawSpriteTinted(sKey, stickX, stickY, WIDGET_SCALE, stickMoved ? stickActive : stickInactive);
@@ -307,7 +296,6 @@ void Display::renderHistory(const Settings &settings)
     title.setPosition({15.f, 8.f});
     historyWindow.draw(title);
 
-    bool filled = (settings.activeStyle == ActiveStyle::Filled);
     const float ICON_SCALE = 0.35f;
     const float MAX_ROW_W = 370.f;
     const float ROW_PAD = 25.f;
@@ -324,13 +312,12 @@ void Display::renderHistory(const Settings &settings)
         {
             if (isDpadButton(btn))
             {
-                std::string gateKey = filled ? "dpad-gate-filled" : "dpad-gate";
                 std::string dirKey;
-                if (btn == "DPad Up") dirKey = "dpad-pressed-up";
-                else if (btn == "DPad Down") dirKey = "dpad-pressed-down";
-                else if (btn == "DPad Left") dirKey = "dpad-pressed-left";
-                else if (btn == "DPad Right") dirKey = "dpad-pressed-right";
-                icons.push_back({gateKey, dirKey, "DPad", ""});
+                if (btn == "DPad Up") dirKey = "dpad-active-up";
+                else if (btn == "DPad Down") dirKey = "dpad-active-down";
+                else if (btn == "DPad Left") dirKey = "dpad-active-left";
+                else if (btn == "DPad Right") dirKey = "dpad-active-right";
+                icons.push_back({"dpad-gate-inactive", dirKey, "DPad", ""});
                 continue;
             }
 
@@ -344,11 +331,11 @@ void Display::renderHistory(const Settings &settings)
                     std::string base = toLower(elem);
                     std::string key;
                     if (isL3R3)
-                        key = base + "-ribs" + (filled ? "-filled" : "");
+                        key = base + "-ribs-active";
                     else
-                        key = base + (filled ? "-filled" : "");
+                        key = base + "-active";
                     if (textures.find(key) == textures.end())
-                        key = base;
+                        key = base + "-inactive";
                     icons.push_back({key, "", elem, btn});
                 }
                 else
@@ -360,7 +347,7 @@ void Display::renderHistory(const Settings &settings)
                             if (ic.element == elem)
                             {
                                 std::string base = toLower(elem);
-                                std::string ribsKey = base + "-ribs" + (filled ? "-filled" : "");
+                                std::string ribsKey = base + "-ribs-active";
                                 if (textures.find(ribsKey) != textures.end())
                                     ic.textureKey = ribsKey;
                                 if (!ic.label.empty())
@@ -385,12 +372,7 @@ void Display::renderHistory(const Settings &settings)
             }
 
             std::string prefix = toLower(btn);
-            std::string key = prefix + "-pressed";
-            if (textures.find(key) == textures.end())
-                key = prefix + "-filled";
-            if (textures.find(key) == textures.end())
-                key = prefix + "-outline";
-            icons.push_back({key, "", btn, ""});
+            icons.push_back({prefix + "-active", "", btn, ""});
         }
 
         float totalH = LINE_H;

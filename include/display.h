@@ -31,6 +31,7 @@ public:
     ViewMode getViewMode() const;
     void loadFont(const std::string &path);
     void setFramerateLimit(int limit);
+    void reloadTextures(const Settings &settings);
     void updateHistory(const Settings &settings, const Controller &controller);
     void renderHistory(const Settings &settings);
     void toggleHistoryWindow();
@@ -47,7 +48,7 @@ private:
     std::map<std::string, sf::Texture> textures;
     sf::Shader tintShader;
     bool shaderLoaded = false;
-    void loadTextures();
+    void loadTextures(const Settings &settings);
     void scanSystemFonts();
     void drawSpriteCentered(const std::string &key, float cx, float cy, float scale);
     void drawSpriteTinted(const std::string &key, float cx, float cy, float scale, sf::Color tint);
@@ -60,6 +61,19 @@ private:
     bool fontPickerOpen = false;
     float fontPickerScroll = 0.f;
     std::map<int, sf::Font> fontPreviewCache;
+
+    bool presetPickerOpen = false;
+    float presetPickerScroll = 0.f;
+    std::vector<std::string> presetList;
+    int selectedPresetIndex = -1;
+
+    bool creatingPreset = false;
+    std::string newPresetName;
+
+    int confirmDeleteIndex = -1;
+
+    bool editingImageFolder = false;
+    std::string imageFolderInput;
 
     std::string draggingElement;
     sf::Vector2f dragOffset;

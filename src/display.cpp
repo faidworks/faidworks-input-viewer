@@ -29,7 +29,8 @@ Display::Display()
         std::cerr << "Failed to load font" << std::endl;
 
     scanSystemFonts();
-    loadTextures();
+    Settings defaultSettings;
+    loadTextures(defaultSettings);
 
     if (tintShader.loadFromFile("resources/shaders/color_tint.frag", sf::Shader::Type::Fragment))
         shaderLoaded = true;
@@ -147,48 +148,101 @@ float Display::navBarHeight() const
     return navBarVisible ? NAV_HEIGHT : 0.f;
 }
 
-void Display::loadTextures()
+struct TextureEntry {
+    const char *key;
+    const char *inactiveDefault;
+    const char *activeDefaultFilled;
+    const char *activeDefaultPressed;
+    const char *filename;
+    bool isActive;
+};
+
+static const TextureEntry TEXTURE_TABLE[] = {
+    // Standard buttons
+    {"a-inactive",            "resources/buttons/filled/inactive/a.png",      nullptr, nullptr, "a.png", false},
+    {"a-active",              nullptr, "resources/buttons/filled/active/a.png",      "resources/buttons/pressed/active/a.png", "a.png", true},
+    {"b-inactive",            "resources/buttons/filled/inactive/b.png",      nullptr, nullptr, "b.png", false},
+    {"b-active",              nullptr, "resources/buttons/filled/active/b.png",      "resources/buttons/pressed/active/b.png", "b.png", true},
+    {"x-inactive",            "resources/buttons/filled/inactive/x.png",      nullptr, nullptr, "x.png", false},
+    {"x-active",              nullptr, "resources/buttons/filled/active/x.png",      "resources/buttons/pressed/active/x.png", "x.png", true},
+    {"y-inactive",            "resources/buttons/filled/inactive/y.png",      nullptr, nullptr, "y.png", false},
+    {"y-active",              nullptr, "resources/buttons/filled/active/y.png",      "resources/buttons/pressed/active/y.png", "y.png", true},
+    {"lb-inactive",           "resources/buttons/filled/inactive/lb.png",     nullptr, nullptr, "lb.png", false},
+    {"lb-active",             nullptr, "resources/buttons/filled/active/lb.png",     "resources/buttons/pressed/active/lb.png", "lb.png", true},
+    {"rb-inactive",           "resources/buttons/filled/inactive/rb.png",     nullptr, nullptr, "rb.png", false},
+    {"rb-active",             nullptr, "resources/buttons/filled/active/rb.png",     "resources/buttons/pressed/active/rb.png", "rb.png", true},
+    {"lt-inactive",           "resources/buttons/filled/inactive/lt.png",     nullptr, nullptr, "lt.png", false},
+    {"lt-active",             nullptr, "resources/buttons/filled/active/lt.png",     "resources/buttons/pressed/active/lt.png", "lt.png", true},
+    {"rt-inactive",           "resources/buttons/filled/inactive/rt.png",     nullptr, nullptr, "rt.png", false},
+    {"rt-active",             nullptr, "resources/buttons/filled/active/rt.png",     "resources/buttons/pressed/active/rt.png", "rt.png", true},
+    {"start-inactive",        "resources/buttons/filled/inactive/start.png",  nullptr, nullptr, "start.png", false},
+    {"start-active",          nullptr, "resources/buttons/filled/active/start.png",  "resources/buttons/pressed/active/start.png", "start.png", true},
+    {"select-inactive",       "resources/buttons/filled/inactive/select.png", nullptr, nullptr, "select.png", false},
+    {"select-active",         nullptr, "resources/buttons/filled/active/select.png", "resources/buttons/pressed/active/select.png", "select.png", true},
+
+    // D-pad
+    {"dpad-gate-inactive",    "resources/buttons/filled/inactive/d-pad-gate.png",    nullptr, nullptr, "d-pad-gate.png", false},
+    {"dpad-gate-active",      nullptr, "resources/buttons/filled/active/d-pad-gate.png",    "resources/buttons/pressed/active/d-pad-gate.png", "d-pad-gate.png", true},
+    {"dpad-active-up",        nullptr, "resources/buttons/filled/active/d-pad-up.png",      "resources/buttons/pressed/active/d-pad-up.png", "d-pad-up.png", true},
+    {"dpad-active-down",      nullptr, "resources/buttons/filled/active/d-pad-down.png",    "resources/buttons/pressed/active/d-pad-down.png", "d-pad-down.png", true},
+    {"dpad-active-left",      nullptr, "resources/buttons/filled/active/d-pad-left.png",    "resources/buttons/pressed/active/d-pad-left.png", "d-pad-left.png", true},
+    {"dpad-active-right",     nullptr, "resources/buttons/filled/active/d-pad-right.png",   "resources/buttons/pressed/active/d-pad-right.png", "d-pad-right.png", true},
+
+    // Left stick
+    {"lstick-gate-inactive",  "resources/buttons/filled/inactive/joystick-gate.png", nullptr, nullptr, "joystick-gate.png", false},
+    {"lstick-gate-active",    nullptr, "resources/buttons/filled/active/joystick-gate.png",  "resources/buttons/pressed/active/joystick-gate.png", "joystick-gate.png", true},
+    {"lstick-inactive",       "resources/buttons/filled/inactive/joystick.png",      nullptr, nullptr, "joystick.png", false},
+    {"lstick-active",         nullptr, "resources/buttons/filled/active/joystick.png",       "resources/buttons/pressed/active/joystick.png", "joystick.png", true},
+    {"lstick-ribs-inactive",  "resources/buttons/filled/inactive/joystick-ribs.png", nullptr, nullptr, "joystick-ribs.png", false},
+    {"lstick-ribs-active",    nullptr, "resources/buttons/filled/active/joystick-ribs.png",  "resources/buttons/pressed/active/joystick-ribs.png", "joystick-ribs.png", true},
+
+    // Right stick
+    {"rstick-gate-inactive",  "resources/buttons/filled/inactive/c-stick-gate.png",  nullptr, nullptr, "c-stick-gate.png", false},
+    {"rstick-gate-active",    nullptr, "resources/buttons/filled/active/c-stick-gate.png",   "resources/buttons/pressed/active/c-stick-gate.png", "c-stick-gate.png", true},
+    {"rstick-inactive",       "resources/buttons/filled/inactive/c-stick.png",       nullptr, nullptr, "c-stick.png", false},
+    {"rstick-active",         nullptr, "resources/buttons/filled/active/c-stick.png",        "resources/buttons/pressed/active/c-stick.png", "c-stick.png", true},
+    {"rstick-ribs-inactive",  "resources/buttons/filled/inactive/c-stick-ribs.png",  nullptr, nullptr, "c-stick-ribs.png", false},
+    {"rstick-ribs-active",    nullptr, "resources/buttons/filled/active/c-stick-ribs.png",   "resources/buttons/pressed/active/c-stick-ribs.png", "c-stick-ribs.png", true},
+};
+
+void Display::loadTextures(const Settings &settings)
 {
-    auto load = [this](const std::string &key, const std::string &path) {
+    namespace fs = std::filesystem;
+    bool usePressed = (settings.presetConfig.builtinActive == "pressed");
+
+    for (const auto &entry : TEXTURE_TABLE)
+    {
+        std::string path;
+
+        auto ovIt = settings.presetConfig.imageOverrides.find(entry.key);
+        if (ovIt != settings.presetConfig.imageOverrides.end() && !ovIt->second.empty())
+            path = ovIt->second;
+        else if (!settings.presetConfig.imageFolder.empty())
+        {
+            std::string subfolder = entry.isActive ? "active" : "inactive";
+            std::string folderPath = settings.presetConfig.imageFolder + "/" + subfolder + "/" + entry.filename;
+            if (fs::exists(folderPath))
+                path = folderPath;
+        }
+
+        if (path.empty())
+        {
+            if (entry.isActive)
+                path = usePressed ? entry.activeDefaultPressed : entry.activeDefaultFilled;
+            else
+                path = entry.inactiveDefault;
+        }
+
         sf::Texture tex;
         if (tex.loadFromFile(path))
-            textures.emplace(key, std::move(tex));
-    };
-
-    std::vector<std::string> buttons = {"a", "b", "x", "y", "lb", "rb", "start", "select"};
-    for (const auto &btn : buttons)
-    {
-        load(btn + "-outline", "resources/buttons/outline/" + btn + "-outline.png");
-        load(btn + "-filled", "resources/buttons/filled/" + btn + "-filled.png");
-        load(btn + "-pressed", "resources/buttons/pressed/" + btn + "-pressed.png");
+            textures.emplace(entry.key, std::move(tex));
     }
+}
 
-    load("lt-outline", "resources/buttons/outline/lt-outline.png");
-    load("lt-filled", "resources/buttons/filled/lt-filled.png");
-    load("lt-pressed", "resources/buttons/pressed/lt-pressed.png");
-    load("rt-outline", "resources/buttons/outline/rt-outline.png");
-    load("rt-filled", "resources/buttons/filled/rt-filled.png");
-    load("rt-pressed", "resources/buttons/pressed/rt-pressed.png");
-
-    load("dpad-gate", "resources/buttons/joysticks/d-pad-gate.png");
-    load("dpad-gate-filled", "resources/buttons/filled/d-pad-gate-filled.png");
-    load("dpad-pressed-up", "resources/buttons/pressed/d-pad-pressed-up.png");
-    load("dpad-pressed-down", "resources/buttons/pressed/d-pad-pressed-down.png");
-    load("dpad-pressed-left", "resources/buttons/pressed/d-pad-pressed-left.png");
-    load("dpad-pressed-right", "resources/buttons/pressed/d-pad-pressed-right.png");
-
-    load("lstick-gate", "resources/buttons/joysticks/joystick-gate.png");
-    load("lstick-gate-filled", "resources/buttons/filled/joystick-gate-filled.png");
-    load("lstick", "resources/buttons/joysticks/joystick.png");
-    load("lstick-filled", "resources/buttons/filled/joystick-filled.png");
-    load("lstick-ribs", "resources/buttons/joysticks/joystick-ribs.png");
-    load("lstick-ribs-filled", "resources/buttons/filled/joystick-ribs-filled.png");
-    load("rstick-gate", "resources/buttons/joysticks/c-stick-gate.png");
-    load("rstick-gate-filled", "resources/buttons/filled/c-stick-gate-filled.png");
-    load("rstick", "resources/buttons/joysticks/c-stick.png");
-    load("rstick-filled", "resources/buttons/filled/c-stick-filled.png");
-    load("rstick-ribs", "resources/buttons/joysticks/c-stick-ribs.png");
-    load("rstick-ribs-filled", "resources/buttons/filled/c-stick-ribs-filled.png");
+void Display::reloadTextures(const Settings &settings)
+{
+    textures.clear();
+    loadTextures(settings);
 }
 
 void Display::drawSpriteCentered(const std::string &key, float cx, float cy, float scale)

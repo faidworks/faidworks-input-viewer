@@ -1,0 +1,48 @@
+name: Build Windows Installer
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake -B build_win -S . -DBUILD_SHARED_LIBS=OFF -DSFML_STATIC_LIBRARIES=TRUE
+
+      - name: Build Release
+        run: cmake --build build_win --config Release
+
+      - name: Determine version
+        id: version
+        shell: bash
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=0.0.0-dev" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build Installer
+        run: |
+          $env:APP_VERSION = "${{ steps.version.outputs.version }}"
+          iscc installer\setup.iss
+
+      - name: Upload Installer Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: build_installer/FaidworksInputViewer-Setup-*.exe
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build_installer/FaidworksInputViewer-Setup-*.exe
+          generate_release_notes: true

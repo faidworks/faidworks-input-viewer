@@ -21,7 +21,20 @@ Run from a Visual Studio Developer Command Prompt:
 build-win.bat
 ```
 
-Produces a statically linked exe at `build_win\src\Release\faidworks-input-viewer.exe` with no external DLL dependencies.
+Produces a statically linked exe at `build_win\bin\Release\faidworks-input-viewer.exe` with no external DLL dependencies.
+
+### Windows Installer
+
+Pre-built installers are available on the [Releases](../../releases) page. The installer places the app in `%LOCALAPPDATA%\FaidworksInputViewer` and requires no admin privileges.
+
+To build the installer locally, install [Inno Setup](https://jrsoftware.org/isdl.php) and run:
+
+```bat
+build-win.bat
+iscc installer\setup.iss
+```
+
+The installer exe will be in `build_installer/`.
 
 ## Usage
 

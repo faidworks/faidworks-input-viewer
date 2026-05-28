@@ -5,15 +5,6 @@ project(FaidworksInputViewerTests)
 # Include directories
 include_directories(../include)
 
-# Find SDL3
-find_package(SDL3 REQUIRED)
-
-# Find SFML
-find_package(SFML REQUIRED COMPONENTS Graphics Audio Network)
-
-# Include Google Test
-find_package(GTest REQUIRED)
-include_directories(${GTEST_INCLUDE_DIRS})
 
 # Glob the test source files
 file(GLOB TEST_SOURCES
@@ -30,7 +21,11 @@ file(GLOB TEST_SOURCES
 add_executable(test_app ${TEST_SOURCES})
 
 # Link the test executable with necessary libraries
-target_link_libraries(test_app ${GTEST_LIBRARIES} faidworks-input-viewer-lib SDL3::SDL3 SFML::Graphics SFML::Audio SFML::Network)
+if(WIN32)
+    target_link_libraries(test_app GTest::gtest GTest::gtest_main faidworks-input-viewer-lib Xinput SFML::Graphics SFML::Audio SFML::Network opengl32 winmm gdi32)
+else()
+    target_link_libraries(test_app GTest::gtest GTest::gtest_main faidworks-input-viewer-lib SDL3::SDL3 SFML::Graphics SFML::Audio SFML::Network)
+endif()
 
 # Conditionally link pthread for Unix-like systems
 if(UNIX)

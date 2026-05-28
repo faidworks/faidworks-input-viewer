@@ -8,5 +8,5 @@ echo Building Release...
 cmake --build build_win --config Release
 
 echo.
-echo Done. Output: build_win\src\Release\faidworks-input-viewer.exe
+echo Done. Output: build_win\bin\Release\faidworks-input-viewer.exe
 echo Remember to include the resources/ folder when distributing.

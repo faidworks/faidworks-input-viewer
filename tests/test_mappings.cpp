@@ -1,4 +1,5 @@
 #include "settings.h"
+#include "test_env_compat.h"
 #include <gtest/gtest.h>
 #include <filesystem>
 #include <fstream>
@@ -24,7 +25,7 @@ protected:
             hadXdg = true;
             origXdg = xdg;
         }
-        setenv("XDG_CONFIG_HOME", tempDir.c_str(), 1);
+        setenv("XDG_CONFIG_HOME", tempDir.string().c_str(), 1);
     }
 
     void TearDown() override

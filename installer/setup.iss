@@ -16,6 +16,7 @@ DefaultGroupName={#MyAppName}
 PrivilegesRequired=lowest
 OutputDir=..\build_installer
 OutputBaseFilename=FaidworksInputViewer-Setup-v{#MyAppVersion}
+LicenseFile=..\LICENSE
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern

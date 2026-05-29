@@ -22,9 +22,9 @@ add_executable(test_app ${TEST_SOURCES})
 
 # Link the test executable with necessary libraries
 if(WIN32)
-    target_link_libraries(test_app GTest::gtest GTest::gtest_main faidworks-input-viewer-lib Xinput SFML::Graphics SFML::Audio SFML::Network opengl32 winmm gdi32)
+    target_link_libraries(test_app GTest::gtest faidworks-input-viewer-lib Xinput SFML::Graphics SFML::Audio SFML::Network opengl32 winmm gdi32)
 else()
-    target_link_libraries(test_app GTest::gtest GTest::gtest_main faidworks-input-viewer-lib SDL3::SDL3 SFML::Graphics SFML::Audio SFML::Network)
+    target_link_libraries(test_app GTest::gtest faidworks-input-viewer-lib SDL3::SDL3 SFML::Graphics SFML::Audio SFML::Network)
 endif()
 
 # Conditionally link pthread for Unix-like systems

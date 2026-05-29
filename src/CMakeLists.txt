@@ -1,8 +1,7 @@
 include_directories(../include)
 
-# Source files
-file(GLOB SOURCES
-    "main.cpp"
+# Source files (no main.cpp — library is linked by both app and tests)
+file(GLOB LIB_SOURCES
     "controller.cpp"
     "settings.cpp"
     "display.cpp"
@@ -12,7 +11,7 @@ file(GLOB SOURCES
     "display_settings.cpp"
 )
 
-add_library(faidworks-input-viewer-lib STATIC ${SOURCES})
+add_library(faidworks-input-viewer-lib STATIC ${LIB_SOURCES})
 
 if (MSVC)
     target_compile_definitions(faidworks-input-viewer-lib PRIVATE _CRT_SECURE_NO_WARNINGS)
@@ -31,7 +30,7 @@ else()
     )
 endif()
 
-add_executable(faidworks-input-viewer ${SOURCES})
+add_executable(faidworks-input-viewer main.cpp)
 target_link_libraries(faidworks-input-viewer PRIVATE faidworks-input-viewer-lib)
 
 if (WIN32)
